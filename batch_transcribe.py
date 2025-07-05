@@ -105,12 +105,19 @@ def main():
                 log("WARNING: No language specified. The script will prompt for language selection.")
                 log("Consider using --lang option for batch processing to avoid manual input.")
             
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=12*3600  # 12h timeout in case of very large file
-            )
+            # For verbose mode, show real-time output
+            if "--verbose" in args:
+                result = subprocess.run(
+                    cmd,
+                    timeout=12*3600  # 12h timeout in case of very large file
+                )
+            else:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=12*3600  # 12h timeout in case of very large file
+                )
             
             elapsed = time.time() - start_time
             
@@ -120,10 +127,12 @@ def main():
             else:
                 log(f"FAIL: {f} (took {elapsed:.1f}s)")
                 log(f"Return code: {result.returncode}")
-                if result.stdout:
-                    log(f"STDOUT: {result.stdout}")
-                if result.stderr:
-                    log(f"STDERR: {result.stderr}")
+                # Only show captured output in non-verbose mode
+                if "--verbose" not in args:
+                    if hasattr(result, 'stdout') and result.stdout:
+                        log(f"STDOUT: {result.stdout}")
+                    if hasattr(result, 'stderr') and result.stderr:
+                        log(f"STDERR: {result.stderr}")
                 failed += 1
                 
         except subprocess.TimeoutExpired:
