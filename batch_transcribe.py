@@ -3,37 +3,76 @@ import subprocess
 import glob
 from datetime import datetime
 import time
+import sys
 
-SCRIPT = "transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py"
-LOGFILE = "batch_transcribe.log"
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT = os.path.join(SCRIPT_DIR, "transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py")
 
 def log(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOGFILE, "a", encoding="utf-8") as f:
+    # Create log file in the current working directory
+    logfile = os.path.join(os.getcwd(), "batch_transcribe.log")
+    with open(logfile, "a", encoding="utf-8") as f:
         f.write(f"[{now}] {msg}\n")
     print(f"[{now}] {msg}")
 
 def check_script_exists():
     if not os.path.exists(SCRIPT):
         log(f"ERROR: Script {SCRIPT} not found!")
+        log(f"Expected location: {SCRIPT}")
         return False
     return True
 
 def main():
+    # Show help if requested
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: python3 batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]")
+        print("")
+        print("TARGET_DIRECTORY:")
+        print("  Directory containing video files (default: current directory)")
+        print("")
+        print("OPTIONS:")
+        print("  --no-clean     Skip transcript cleaning (faster)")
+        print("  --verbose      Show detailed progress")
+        print("  --force        Overwrite existing output files")
+        print("  --lang LANG    Specify language (e.g., zh, en, ja, ko, fr, de)")
+        print("  --help, -h     Show this help message")
+        print("")
+        print("EXAMPLES:")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py . --verbose")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-clean")
+        return
+    
     if not check_script_exists():
         return
     
-    folder = "."
-    files = sorted(glob.glob(os.path.join(folder, "*.mov")) + glob.glob(os.path.join(folder, "*.mp4")))
+    # Get target directory from command line or use current directory
+    target_dir = os.getcwd()  # Default to current directory
+    
+    # Parse arguments to find target directory (first non-flag argument)
+    for i, arg in enumerate(sys.argv[1:], 1):
+        if not arg.startswith('--'):
+            # This is the target directory
+            target_dir = arg
+            if not os.path.exists(target_dir):
+                log(f"ERROR: Target directory '{target_dir}' does not exist!")
+                return
+            break
+    
+    log(f"Target directory: {target_dir}")
+    
+    # Find video files in the target directory
+    files = sorted(glob.glob(os.path.join(target_dir, "*.mov")) + glob.glob(os.path.join(target_dir, "*.mp4")))
     
     if not files:
-        log("No .mov or .mp4 files found in current directory.")
+        log("No .mov or .mp4 files found in target directory.")
         return
     
     log(f"Batch processing started. Found {len(files)} files.")
     
     # Check for command line options
-    import sys
     args = []
     if "--no-clean" in sys.argv:
         args.append("--no-clean")
@@ -44,6 +83,11 @@ def main():
     if "--force" in sys.argv:
         args.append("--force")
         log("Using --force mode (overwrite existing files)")
+    if "--lang" in sys.argv:
+        lang_index = sys.argv.index("--lang")
+        if lang_index + 1 < len(sys.argv) and not sys.argv[lang_index + 1].startswith("--"):
+            args.extend(["--lang", sys.argv[lang_index + 1]])
+            log(f"Using language: {sys.argv[lang_index + 1]}")
 
     successful = 0
     failed = 0
@@ -53,7 +97,7 @@ def main():
         start_time = time.time()
         
         try:
-            # Build command with arguments
+            # Build command with absolute paths
             cmd = ["python3", SCRIPT, f] + args
             
             result = subprocess.run(
