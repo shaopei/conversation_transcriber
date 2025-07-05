@@ -61,7 +61,7 @@ def load_diarization_pipeline(token):
     pipeline.to(device)
     return pipeline
 
-def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="large-v3", verbose=False):
+def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="large-v3", verbose=False, language=None):
     diarization = pipeline(audio_file)
     log("Speaker diarization done")
 
@@ -70,6 +70,9 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
     transcript_lines = []
     segments_list = list(diarization.itertracks(yield_label=True))
     log(f"Found {len(segments_list)} segments to transcribe.")
+
+    # Initialize language detection variable
+    detected_lang = None
 
     for i, (turn, _, speaker) in enumerate(segments_list):
         if verbose:
@@ -92,7 +95,30 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
             
             # Verify the file was created and has content
             if os.path.exists(segment_file) and os.path.getsize(segment_file) > 0:
-                segments = whisper_model.transcribe(segment_file, language='zh')
+                # Use specified language or auto-detect
+                if language:
+                    # Use manually specified language
+                    segments = whisper_model.transcribe(segment_file, language=language)
+                    if i == 0:
+                        log(f"Using specified language: {language}")
+                else:
+                    # Try to detect language from the first few segments
+                    if i == 0:  # First segment - try to detect language
+                        try:
+                            # Try Chinese first for better accuracy
+                            segments = whisper_model.transcribe(segment_file, language='zh')
+                            detected_lang = 'zh'
+                            log(f"Using Chinese language detection for transcription")
+                        except Exception as e:
+                            # Fallback to auto detection
+                            segments = whisper_model.transcribe(segment_file)
+                            detected_lang = 'auto'
+                            log(f"Using auto language detection for transcription")
+                    else:
+                        # Use the same language as first segment for consistency
+                        current_lang = detected_lang if detected_lang else 'zh'
+                        segments = whisper_model.transcribe(segment_file, language=current_lang)
+                
                 text = " ".join([seg.text.strip() for seg in segments if seg.text.strip()])
             else:
                 log(f"Warning: Temporary file {segment_file} is empty or missing")
@@ -107,6 +133,7 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
                     os.remove(segment_file)
                 except OSError as cleanup_error:
                     log(f"Warning: Could not remove temp file {segment_file}: {cleanup_error}")
+        
         if text:
             line = f"Speaker {speaker.split('_')[-1]}: [{turn.start:.2f}-{turn.end:.2f}] {text}"
             transcript_lines.append(line)
@@ -117,14 +144,14 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
     log("Whisper model transcribe done")
     return "\n".join(transcript_lines)
 
-def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose=False):
+def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose=False, language=None):
     if os.path.exists(raw_transcript_path):
         log(f"Found existing raw transcript at {raw_transcript_path}, skipping audio conversion, diarization, and transcription.")
         with open(raw_transcript_path, "r", encoding="utf-8") as f:
             return f.read()
     else:
         audio_file = ensure_wav_mono_16k(input_file)
-        transcript = run_diarization_and_transcription(audio_file, pipeline, verbose=verbose)
+        transcript = run_diarization_and_transcription(audio_file, pipeline, verbose=verbose, language=language)
         with open(raw_transcript_path, "w", encoding="utf-8") as f:
             f.write(transcript)
         if audio_file.endswith("_16k_mono.wav") and os.path.exists(audio_file):
@@ -158,12 +185,45 @@ def clean_transcript(transcript, good_transcript_path):
     log(f"修飾逐字稿: {good_transcript_path}")
     return good_transcript
 
+def detect_language(text):
+    """Simple language detection based on character sets"""
+    if not text:
+        return 'en'
+    
+    # Count Chinese characters (CJK Unified Ideographs)
+    chinese_chars = sum(1 for char in text if '\u4e00' <= char <= '\u9fff')
+    total_chars = len([char for char in text if char.isalpha()])
+    
+    if total_chars == 0:
+        return 'en'
+    
+    chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+    
+    if chinese_ratio > 0.3:  # If more than 30% are Chinese characters
+        return 'zh'
+    else:
+        return 'en'
+
 def clean_transcript_chunk(transcript_chunk):
-    clean_prompt = f"""請修飾下面的逐字稿：
+    # Detect language and create appropriate prompt
+    language = detect_language(transcript_chunk)
+    
+    if language.startswith('zh'):
+        clean_prompt = f"""請修飾下面的逐字稿：
 - 盡量保留原意
 - 去除贅字
 - 加上正確的標點符號
 - 修正常見錯字（例如：錯別字、同音字、口誤導致的打錯字）
+---
+{transcript_chunk}
+"""
+    else:
+        # English and other languages
+        clean_prompt = f"""Please clean up the following transcript:
+- Keep the original meaning
+- Remove filler words
+- Add correct punctuation
+- Fix common typos and spelling errors
 ---
 {transcript_chunk}
 """
@@ -210,7 +270,18 @@ def clean_transcript_chunk(transcript_chunk):
     return transcript_chunk
 
 def generate_summary(good_transcript, summary_path):
-    long_summary_prompt = f"""請根據下面的的逐字稿(可能是與心理師談話)，以主要speaker的內容寫一段1000字以內的摘要，講述她最近的生活狀態，請把人物名稱標注在內，用字自然，不要有開會的感覺，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
+    # Detect language and create appropriate prompt
+    language = detect_language(good_transcript)
+    
+    if language.startswith('zh'):
+        long_summary_prompt = f"""請根據下面的的逐字稿(可能是與心理師談話)，以主要speaker的內容寫一段1000字以內的摘要，講述她最近的生活狀態，請把人物名稱標注在內，用字自然，不要有開會的感覺，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
+
+---
+{good_transcript}
+"""
+    else:
+        # English and other languages
+        long_summary_prompt = f"""Based on the following transcript (possibly a therapy session), write a summary of up to 1000 words focusing on the main speaker's content, describing their recent life situation. Include person names mentioned, use natural language, avoid formal meeting tone, and fix common typos and similar-sounding words:
 
 ---
 {good_transcript}
@@ -218,7 +289,7 @@ def generate_summary(good_transcript, summary_path):
     response_long_summary = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "你是一位會議談話內容摘要助手。"},
+            {"role": "system", "content": "你是一位會議談話內容摘要助手。" if language.startswith('zh') else "You are a meeting transcript summarization assistant."},
             {"role": "user", "content": long_summary_prompt},
         ],
         temperature=0.2,
@@ -227,16 +298,26 @@ def generate_summary(good_transcript, summary_path):
     long_summary = response_long_summary.choices[0].message.content
     if long_summary is None:
         log("Warning: API returned None for summary, using fallback")
-        long_summary = "無法生成摘要"
+        long_summary = "無法生成摘要" if language.startswith('zh') else "Unable to generate summary"
     else:
         long_summary = long_summary.strip()
     with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(long_summary)
-    log(f"重點摘要: {summary_path}")
+    log(f"重點摘要: {summary_path}" if language.startswith('zh') else f"Summary: {summary_path}")
     return long_summary
 
 def generate_filename_summary(long_summary):
-    summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在30個字以內，不要包含任何前綴，只需主題內容：
+    # Detect language and create appropriate prompt
+    language = detect_language(long_summary)
+    
+    if language.startswith('zh'):
+        summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在30個字以內，不要包含任何前綴，只需主題內容：
+---
+{long_summary}
+"""
+    else:
+        # English and other languages
+        summary_prompt = f"""Based on the following transcript, give me a one-sentence summary suitable as a filename (include the topic, important events, or names mentioned multiple times by the speaker). Keep it within 30 words, no prefixes, just the topic content:
 ---
 {long_summary}
 """
@@ -252,7 +333,7 @@ def generate_filename_summary(long_summary):
     summary = response_summary.choices[0].message.content
     if summary is None:
         log("Warning: API returned None for filename summary, using fallback")
-        return "談話記錄"
+        return "談話記錄" if language.startswith('zh') else "conversation"
     summary = summary.strip()
     summary = re.sub(r'[\\/*?:"<>|\n\r]', '', summary)
     return summary
@@ -275,8 +356,13 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-clean]")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-clean --lang LANGUAGE]")
         print("  --no-clean: Skip transcript cleaning (much faster, avoids timeout issues)")
+        print("  --lang LANGUAGE: Specify language (e.g., zh, en, ja, ko, fr, de, etc.)")
+        print("  Examples:")
+        print("    python script.py video.mp4 --lang zh")
+        print("    python script.py video.mp4 --lang en")
+        print("    python script.py video.mp4 --lang ja")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -284,6 +370,16 @@ def main():
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
     skip_cleaning = '--no-clean' in sys.argv
+    
+    # Parse language argument
+    language = None
+    if '--lang' in sys.argv:
+        lang_index = sys.argv.index('--lang')
+        if lang_index + 1 < len(sys.argv):
+            language = sys.argv[lang_index + 1]
+            log(f"Using specified language: {language}")
+        else:
+            log("Warning: --lang specified but no language given, using auto-detection")
 
     if not os.path.exists(input_file):
         print(f"File not found: {input_file}")
@@ -310,7 +406,7 @@ def main():
         log(f"Found existing clean transcript at {good_transcript_path}")
     else:
         pipeline = load_diarization_pipeline(HF_TOKEN)
-        transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose)
+        transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose, language)
         
         if skip_cleaning:
             log("Skipping transcript cleaning (--no-clean flag used)")
