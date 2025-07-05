@@ -30,13 +30,29 @@ def ensure_wav_mono_16k(input_path):
     import wave
     base, ext = os.path.splitext(input_path)
     out_wav = base + "_16k_mono.wav"
+    
+    # Check if input is already the right format
     if ext.lower() == ".wav":
-        with wave.open(input_path, 'rb') as wf:
-            if wf.getnchannels() == 1 and wf.getframerate() == 16000:
-                return input_path
+        try:
+            with wave.open(input_path, 'rb') as wf:
+                if wf.getnchannels() == 1 and wf.getframerate() == 16000:
+                    return input_path
+        except Exception as e:
+            log(f"Warning: Could not check WAV format: {e}")
+    
+    # Convert to required format
     log(f"Converting {input_path} to mono 16kHz WAV...")
-    subprocess.run(['ffmpeg', '-y', '-i', input_path, '-ar', '16000', '-ac', '1', out_wav], check=True)
-    return out_wav
+    try:
+        subprocess.run(['ffmpeg', '-y', '-i', input_path, '-ar', '16000', '-ac', '1', out_wav], 
+                      check=True, capture_output=True, text=True)
+        return out_wav
+    except subprocess.CalledProcessError as e:
+        log(f"FFmpeg conversion failed: {e}")
+        log(f"FFmpeg stderr: {e.stderr}")
+        raise
+    except FileNotFoundError:
+        log("Error: FFmpeg not found. Please install FFmpeg.")
+        raise
 
 def load_diarization_pipeline(token):
     device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
@@ -61,18 +77,36 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
         start_ms = int(turn.start * 1000)
         end_ms = int(turn.end * 1000)
         segment = audio[start_ms:end_ms]
-        segment_file = f"segment_{start_ms}_{end_ms}.wav"
-        segment.export(segment_file, format="wav")
-
+        
+        # Use safer temporary file handling to avoid I/O errors
+        segment_file = None
+        text = ""
+        
         try:
-            segments = whisper_model.transcribe(segment_file, language='zh')
-            text = " ".join([seg.text.strip() for seg in segments if seg.text.strip()])
+            import tempfile
+            
+            # Create temporary file with proper cleanup
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                segment_file = temp_file.name
+                segment.export(segment_file, format="wav")
+            
+            # Verify the file was created and has content
+            if os.path.exists(segment_file) and os.path.getsize(segment_file) > 0:
+                segments = whisper_model.transcribe(segment_file, language='zh')
+                text = " ".join([seg.text.strip() for seg in segments if seg.text.strip()])
+            else:
+                log(f"Warning: Temporary file {segment_file} is empty or missing")
+            
         except Exception as e:
-            log(f"Error transcribing segment {segment_file}: {e}")
-            os.remove(segment_file)
-            continue
-
-        os.remove(segment_file)
+            log(f"Error transcribing segment {i+1}: {e}")
+            text = ""
+        finally:
+            # Always clean up the temporary file
+            if segment_file and os.path.exists(segment_file):
+                try:
+                    os.remove(segment_file)
+                except OSError as cleanup_error:
+                    log(f"Warning: Could not remove temp file {segment_file}: {cleanup_error}")
         if text:
             line = f"Speaker {speaker.split('_')[-1]}: [{turn.start:.2f}-{turn.end:.2f}] {text}"
             transcript_lines.append(line)
@@ -133,24 +167,47 @@ def clean_transcript_chunk(transcript_chunk):
 ---
 {transcript_chunk}
 """
-    try:
-        response_clean = openai.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {"role": "system", "content": "你是一個優秀的中文逐字稿修飾助手。"},
-                {"role": "user", "content": clean_prompt},
-            ],
-            temperature=0.2,
-            timeout=60  # 1 minute timeout per chunk
-        )
-        good_transcript = response_clean.choices[0].message.content
-        if good_transcript is None:
-            log("Warning: API returned None for transcript cleaning, using original")
-            return transcript_chunk
-        return good_transcript.strip()
-    except Exception as e:
-        log(f"Error cleaning transcript chunk: {e}, using original")
-        return transcript_chunk
+    
+    # Try gpt-4.1-mini with increasing timeouts and retries
+    timeouts_to_try = [120, 180, 240]  # 2min, 3min, 4min
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        timeout_seconds = timeouts_to_try[attempt] if attempt < len(timeouts_to_try) else timeouts_to_try[-1]
+        
+        try:
+            log(f"Attempt {attempt + 1}/{max_retries}: Trying gpt-4.1-mini with {timeout_seconds}s timeout...")
+            response_clean = openai.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system", "content": "你是一個優秀的中文逐字稿修飾助手。"},
+                    {"role": "user", "content": clean_prompt},
+                ],
+                temperature=0.2,
+                timeout=timeout_seconds
+            )
+            good_transcript = response_clean.choices[0].message.content
+            if good_transcript is None:
+                log(f"Warning: gpt-4.1-mini returned None on attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    break
+            log(f"Successfully cleaned chunk using gpt-4.1-mini (attempt {attempt + 1})")
+            return good_transcript.strip()
+            
+        except Exception as e:
+            log(f"Error with gpt-4.1-mini (attempt {attempt + 1}): {e}")
+            if "timeout" in str(e).lower():
+                log(f"Timeout with gpt-4.1-mini on attempt {attempt + 1}, trying again with longer timeout...")
+            if attempt < max_retries - 1:
+                continue
+            else:
+                break
+    
+    # If all attempts fail, return original
+    log("All attempts with gpt-4.1-mini failed for transcript cleaning, using original")
+    return transcript_chunk
 
 def generate_summary(good_transcript, summary_path):
     long_summary_prompt = f"""請根據下面的的逐字稿(可能是與心理師談話)，以主要speaker的內容寫一段1000字以內的摘要，講述她最近的生活狀態，請把人物名稱標注在內，用字自然，不要有開會的感覺，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
@@ -164,9 +221,15 @@ def generate_summary(good_transcript, summary_path):
             {"role": "system", "content": "你是一位會議談話內容摘要助手。"},
             {"role": "user", "content": long_summary_prompt},
         ],
-        temperature=0.2
+        temperature=0.2,
+        timeout=120  # 2 minute timeout
     )
-    long_summary = response_long_summary.choices[0].message.content.strip()
+    long_summary = response_long_summary.choices[0].message.content
+    if long_summary is None:
+        log("Warning: API returned None for summary, using fallback")
+        long_summary = "無法生成摘要"
+    else:
+        long_summary = long_summary.strip()
     with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(long_summary)
     log(f"重點摘要: {summary_path}")
@@ -183,9 +246,14 @@ def generate_filename_summary(long_summary):
             {"role": "system", "content": "You are an assistant that generates concise file names from transcripts."},
             {"role": "user", "content": summary_prompt},
         ],
-        temperature=0.2
+        temperature=0.2,
+        timeout=60  # 1 minute timeout
     )
-    summary = response_summary.choices[0].message.content.strip()
+    summary = response_summary.choices[0].message.content
+    if summary is None:
+        log("Warning: API returned None for filename summary, using fallback")
+        return "談話記錄"
+    summary = summary.strip()
     summary = re.sub(r'[\\/*?:"<>|\n\r]', '', summary)
     return summary
 
@@ -207,7 +275,8 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose]")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-clean]")
+        print("  --no-clean: Skip transcript cleaning (much faster, avoids timeout issues)")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -242,7 +311,14 @@ def main():
     else:
         pipeline = load_diarization_pipeline(HF_TOKEN)
         transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose)
-        good_transcript = clean_transcript(transcript, good_transcript_path)
+        
+        if skip_cleaning:
+            log("Skipping transcript cleaning (--no-clean flag used)")
+            good_transcript = transcript
+            with open(good_transcript_path, 'w', encoding='utf-8') as f:
+                f.write(good_transcript)
+        else:
+            good_transcript = clean_transcript(transcript, good_transcript_path)
 
     # ---- STEP 2: get or generate summary ----
     if os.path.exists(summary_path) and not force:
