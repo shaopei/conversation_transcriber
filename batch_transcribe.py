@@ -100,6 +100,11 @@ def main():
             # Build command with absolute paths
             cmd = ["python3", SCRIPT, f] + args
             
+            # For interactive language selection, we need to handle stdin
+            if "--lang" not in args:
+                log("WARNING: No language specified. The script will prompt for language selection.")
+                log("Consider using --lang option for batch processing to avoid manual input.")
+            
             result = subprocess.run(
                 cmd,
                 capture_output=True,

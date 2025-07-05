@@ -102,22 +102,44 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
                     if i == 0:
                         log(f"Using specified language: {language}")
                 else:
-                    # Try to detect language from the first few segments
-                    if i == 0:  # First segment - try to detect language
-                        try:
-                            # Try Chinese first for better accuracy
-                            segments = whisper_model.transcribe(segment_file, language='zh')
-                            detected_lang = 'zh'
-                            log(f"Using Chinese language detection for transcription")
-                        except Exception as e:
-                            # Fallback to auto detection
+                    # Ask for language if not specified
+                    if i == 0:  # First segment - ask for language
+                        print("\n" + "="*50)
+                        print("LANGUAGE SELECTION")
+                        print("="*50)
+                        print("Please specify the language for transcription:")
+                        print("  zh - Chinese")
+                        print("  en - English")
+                        print("  ja - Japanese")
+                        print("  ko - Korean")
+                        print("  fr - French")
+                        print("  de - German")
+                        print("  es - Spanish")
+                        print("  it - Italian")
+                        print("  pt - Portuguese")
+                        print("  ru - Russian")
+                        print("  auto - Auto-detect (may not be accurate)")
+                        print("="*50)
+                        
+                        while True:
+                            detected_lang = input("Enter language code (e.g., zh, en, ja): ").strip().lower()
+                            if detected_lang in ['zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'it', 'pt', 'ru', 'auto']:
+                                break
+                            else:
+                                print("Invalid language code. Please try again.")
+                        
+                        if detected_lang == 'auto':
                             segments = whisper_model.transcribe(segment_file)
-                            detected_lang = 'auto'
                             log(f"Using auto language detection for transcription")
+                        else:
+                            segments = whisper_model.transcribe(segment_file, language=detected_lang)
+                            log(f"Using specified language: {detected_lang}")
                     else:
                         # Use the same language as first segment for consistency
-                        current_lang = detected_lang if detected_lang else 'zh'
-                        segments = whisper_model.transcribe(segment_file, language=current_lang)
+                        if detected_lang == 'auto':
+                            segments = whisper_model.transcribe(segment_file)
+                        else:
+                            segments = whisper_model.transcribe(segment_file, language=detected_lang)
                 
                 text = " ".join([seg.text.strip() for seg in segments if seg.text.strip()])
             else:
@@ -359,10 +381,12 @@ def main():
         print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-clean --lang LANGUAGE]")
         print("  --no-clean: Skip transcript cleaning (much faster, avoids timeout issues)")
         print("  --lang LANGUAGE: Specify language (e.g., zh, en, ja, ko, fr, de, etc.)")
+        print("  Note: If --lang is not specified, you will be prompted to select a language")
         print("  Examples:")
         print("    python script.py video.mp4 --lang zh")
         print("    python script.py video.mp4 --lang en")
         print("    python script.py video.mp4 --lang ja")
+        print("    python script.py video.mp4  # Will prompt for language")
         sys.exit(1)
 
     input_file = sys.argv[1]
