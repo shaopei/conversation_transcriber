@@ -19,7 +19,6 @@ if HF_TOKEN is None:
 
 # Start timer
 start_time = datetime.now()
-
 def elapsed():
     delta = datetime.now() - start_time
     return f"{delta.total_seconds():.1f}s"
@@ -47,14 +46,12 @@ def load_diarization_pipeline(token):
     return pipeline
 
 def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="large-v3", verbose=False):
-
     diarization = pipeline(audio_file)
     log("Speaker diarization done")
 
     audio = AudioSegment.from_wav(audio_file)
     whisper_model = Model(whisper_model_path)
     transcript_lines = []
-
     segments_list = list(diarization.itertracks(yield_label=True))
     log(f"Found {len(segments_list)} segments to transcribe.")
 
@@ -77,7 +74,6 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
 
         os.remove(segment_file)
         if text:
-            #line = f"Speaker {speaker.split('_')[-1]}: {text}"
             line = f"Speaker {speaker.split('_')[-1]}: [{turn.start:.2f}-{turn.end:.2f}] {text}"
             transcript_lines.append(line)
             if verbose:
@@ -88,7 +84,6 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
     return "\n".join(transcript_lines)
 
 def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose=False):
-
     if os.path.exists(raw_transcript_path):
         log(f"Found existing raw transcript at {raw_transcript_path}, skipping audio conversion, diarization, and transcription.")
         with open(raw_transcript_path, "r", encoding="utf-8") as f:
@@ -103,51 +98,79 @@ def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbo
             log(f"Deleted temporary file: {audio_file}")
         return transcript
 
-def clean_and_summarize(transcript, good_transcript_path, summary_path):
+def clean_transcript(transcript, good_transcript_path):
+    # If transcript is very long, chunk it to avoid timeout
+    max_chars = 6000  # Conservative limit for transcript cleaning
+    if len(transcript) > max_chars:
+        log(f"Transcript is very long ({len(transcript)} chars), using chunking for cleaning")
+        # Split into chunks and process each
+        chunks = []
+        for i in range(0, len(transcript), max_chars):
+            chunk = transcript[i:i + max_chars]
+            chunks.append(chunk)
+        
+        cleaned_chunks = []
+        for i, chunk in enumerate(chunks):
+            log(f"Cleaning chunk {i+1} of {len(chunks)}...")
+            cleaned_chunk = clean_transcript_chunk(chunk)
+            cleaned_chunks.append(cleaned_chunk)
+        
+        good_transcript = "\n\n".join(cleaned_chunks)
+    else:
+        good_transcript = clean_transcript_chunk(transcript)
+    
+    with open(good_transcript_path, 'w', encoding='utf-8') as f:
+        f.write(good_transcript)
+    log(f"修飾逐字稿: {good_transcript_path}")
+    return good_transcript
+
+def clean_transcript_chunk(transcript_chunk):
     clean_prompt = f"""請修飾下面的逐字稿：
 - 盡量保留原意
 - 去除贅字
 - 加上正確的標點符號
 - 修正常見錯字（例如：錯別字、同音字、口誤導致的打錯字）
 ---
-{transcript}
+{transcript_chunk}
 """
-    #long_summary_prompt = f"""請根據下面的與心理師談話的逐字稿，寫一段1000字以內的摘要（用字自然，保留原本說話者的用字與感覺，不要有開會的感覺，重點條列，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
+    try:
+        response_clean = openai.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": "你是一個優秀的中文逐字稿修飾助手。"},
+                {"role": "user", "content": clean_prompt},
+            ],
+            temperature=0.2,
+            timeout=60  # 1 minute timeout per chunk
+        )
+        good_transcript = response_clean.choices[0].message.content
+        if good_transcript is None:
+            log("Warning: API returned None for transcript cleaning, using original")
+            return transcript_chunk
+        return good_transcript.strip()
+    except Exception as e:
+        log(f"Error cleaning transcript chunk: {e}, using original")
+        return transcript_chunk
+
+def generate_summary(good_transcript, summary_path):
     long_summary_prompt = f"""請根據下面的的逐字稿(可能是與心理師談話)，以主要speaker的內容寫一段1000字以內的摘要，講述她最近的生活狀態，請把人物名稱標注在內，用字自然，不要有開會的感覺，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
 
 ---
-{{content}}
+{good_transcript}
 """
-
-    response_clean = openai.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {"role": "system", "content": "你是一個優秀的中文逐字稿修飾助手。"},
-            {"role": "user", "content": clean_prompt},
-        ],
-        temperature=0.2
-    )
-    good_transcript = response_clean.choices[0].message.content.strip()
-
-    prompt_long_summary_filled = long_summary_prompt.format(content=good_transcript)
     response_long_summary = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "你是一位會議談話內容摘要助手。"},
-            {"role": "user", "content": prompt_long_summary_filled},
+            {"role": "user", "content": long_summary_prompt},
         ],
         temperature=0.2
     )
     long_summary = response_long_summary.choices[0].message.content.strip()
-
-    with open(good_transcript_path, 'w', encoding='utf-8') as f:
-        f.write(good_transcript)
     with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(long_summary)
-
-    log(f"修飾逐字稿: {good_transcript_path}")
     log(f"重點摘要: {summary_path}")
-    return good_transcript, long_summary
+    return long_summary
 
 def generate_filename_summary(long_summary):
     summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在30個字以內，不要包含任何前綴，只需主題內容：
@@ -168,11 +191,9 @@ def generate_filename_summary(long_summary):
 
 def write_srt(transcript_lines, srt_path):
     from datetime import timedelta
-
     def format_timestamp(seconds):
         td = timedelta(seconds=float(seconds))
         return f"{td.seconds//3600:02}:{(td.seconds//60)%60:02}:{td.seconds%60:02},{int(td.microseconds/1000):03}"
-
     entries = []
     for i, line in enumerate(transcript_lines, 1):
         match = re.match(r"Speaker (\d+): \[(\d+\.\d+)-(\d+\.\d+)\] (.+)", line)
@@ -180,11 +201,9 @@ def write_srt(transcript_lines, srt_path):
             continue
         speaker, start, end, text = match.groups()
         entries.append(f"{i}\n{format_timestamp(start)} --> {format_timestamp(end)}\nSpeaker {speaker}: {text}\n")
-
     with open(srt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(entries))
     log(f"SRT subtitles saved to: {srt_path}")
-
 
 def main():
     if len(sys.argv) < 2:
@@ -195,6 +214,7 @@ def main():
     rename_file = '--rename' in sys.argv
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
+    skip_cleaning = '--no-clean' in sys.argv
 
     if not os.path.exists(input_file):
         print(f"File not found: {input_file}")
@@ -214,27 +234,39 @@ def main():
         log("Both clean transcript and summary already exist. Use --force to overwrite.")
         sys.exit(0)
 
-    pipeline = load_diarization_pipeline(HF_TOKEN)
-    transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose)
+    # ---- STEP 1: get or generate good_transcript ----
+    if os.path.exists(good_transcript_path) and not force:
+        with open(good_transcript_path, "r", encoding="utf-8") as f:
+            good_transcript = f.read()
+        log(f"Found existing clean transcript at {good_transcript_path}")
+    else:
+        pipeline = load_diarization_pipeline(HF_TOKEN)
+        transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose)
+        good_transcript = clean_transcript(transcript, good_transcript_path)
 
-    good_transcript, long_summary = clean_and_summarize(transcript, good_transcript_path, summary_path)
-    
-    # Save .srt subtitles
-    transcript_lines = transcript.strip().splitlines()
-    srt_path = os.path.join(basepath, f"{output_prefix}.srt")
-    write_srt(transcript_lines, srt_path)
+    # ---- STEP 2: get or generate summary ----
+    if os.path.exists(summary_path) and not force:
+        log(f"Found existing summary at {summary_path}")
+        with open(summary_path, "r", encoding="utf-8") as f:
+            long_summary = f.read()
+    else:
+        long_summary = generate_summary(good_transcript, summary_path)
 
+    # Save .srt subtitles (from original transcript, not cleaned)
+    if os.path.exists(raw_transcript_path):
+        with open(raw_transcript_path, "r", encoding="utf-8") as f:
+            transcript_lines = f.read().strip().splitlines()
+        srt_path = os.path.join(basepath, f"{output_prefix}.srt")
+        write_srt(transcript_lines, srt_path)
 
     # --- Summary-based renaming ---
     if rename_file:
-        # Accept YYYY-MM-DD or YYYYMMDD
         date_match = re.search(r'(\d{4}-\d{2}-\d{2})', base)
         if date_match:
             date_str = date_match.group(1)
         else:
             date_match = re.search(r'(\d{8})', base)
             if date_match:
-                # Convert 20211221 -> 2021-12-21
                 d = date_match.group(1)
                 date_str = f"{d[:4]}-{d[4:6]}-{d[6:]}"
             else:
@@ -242,7 +274,6 @@ def main():
         summary_for_name = generate_filename_summary(long_summary)
         ext = os.path.splitext(input_file)[1]
         new_base = f"{date_str}_{summary_for_name}"
-
 
         # --- Rename main media file ---
         new_file_path = os.path.join(basepath, f"{new_base}{ext}")
