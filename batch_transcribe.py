@@ -36,13 +36,14 @@ def main():
         print("  --no-clean     Skip transcript cleaning (faster)")
         print("  --verbose      Show detailed progress")
         print("  --force        Overwrite existing output files")
-        print("  --lang LANG    Specify language (e.g., zh, en, ja, ko, fr, de)")
+        print("  --lang LANG    Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
         print("  --help, -h     Show this help message")
         print("")
         print("EXAMPLES:")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py . --verbose")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-clean")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos  # Uses English (default)")
         return
     
     if not check_script_exists():
@@ -100,10 +101,9 @@ def main():
             # Build command with absolute paths
             cmd = ["python3", SCRIPT, f] + args
             
-            # For interactive language selection, we need to handle stdin
+            # Language handling - English is default, but --lang can be specified
             if "--lang" not in args:
-                log("WARNING: No language specified. The script will prompt for language selection.")
-                log("Consider using --lang option for batch processing to avoid manual input.")
+                log("Using English as default language. Use --lang to specify other languages.")
             
             # For verbose mode, show real-time output
             if "--verbose" in args:
