@@ -364,6 +364,15 @@ def main():
         else:
             log("Warning: --lang specified but no language given, using English (default)")
     else:
+        print("\n" + "="*60)
+        print("LANGUAGE SETTING")
+        print("="*60)
+        print("Using English as default language.")
+        print("To use other languages, specify with --lang option:")
+        print("  --lang zh (Chinese)  --lang ja (Japanese)  --lang ko (Korean)")
+        print("  --lang fr (French)   --lang de (German)    --lang es (Spanish)")
+        print("  --lang it (Italian)  --lang pt (Portuguese) --lang ru (Russian)")
+        print("="*60)
         log("Using English as default language. Use --lang to specify other languages (zh, ja, ko, fr, de, es, it, pt, ru)")
 
     if not os.path.exists(input_file):
