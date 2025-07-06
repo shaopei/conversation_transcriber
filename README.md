@@ -29,26 +29,40 @@ Transform your conversations into organized, searchable transcripts with AI-powe
 - **Academic Discussions**: Document research conversations
 - **Legal Proceedings**: Maintain accurate conversation records
 
+## 📦 Installation
+
+### Option 1: Install from PyPI (Recommended)
+```bash
+pip install conversation-transcriber
+```
+
+### Option 2: Install from Source
+```bash
+git clone https://github.com/yourusername/conversation-transcriber.git
+cd conversation-transcriber
+pip install -e .
+```
+
 ## 📋 Requirements
 
 ### Software Requirements
 - **FFmpeg**: For audio/video conversion
 - **Python 3.8+**: For running the scripts
 
-### Python Dependencies
+### API Keys Setup
+1. Copy the example environment file:
 ```bash
-pip install openai pyannote.audio pydub torch pywhispercpp python-dotenv
+cp env.example .env
 ```
 
-### API Keys Setup
-1. Create a `.env` file in the project directory:
+2. Edit `.env` and add your API keys:
 ```bash
 HF_TOKEN=your_huggingface_token_here
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-2. Get your HuggingFace token from [HuggingFace](https://huggingface.co/settings/tokens)
-3. Get your OpenAI API key from [OpenAI](https://platform.openai.com/api-keys)
+3. Get your HuggingFace token from [HuggingFace](https://huggingface.co/settings/tokens)
+4. Get your OpenAI API key from [OpenAI](https://platform.openai.com/api-keys)
 
 ## 🛠️ Usage Guide
 
@@ -58,6 +72,10 @@ Process one conversation file at a time with full control over options.
 
 **Usage:**
 ```bash
+# If installed as package
+conversation-transcriber input_file [OPTIONS]
+
+# Or run directly
 python conversation_transcriber.py input_file [OPTIONS]
 ```
 
@@ -72,19 +90,19 @@ python conversation_transcriber.py input_file [OPTIONS]
 **Examples:**
 ```bash
 # Basic usage (English default, no summary)
-python conversation_transcriber.py video.mp4
+conversation-transcriber video.mp4
 
 # Chinese transcription with summary
-python conversation_transcriber.py video.mp4 --lang zh --summary
+conversation-transcriber video.mp4 --lang zh --summary
 
 # Auto-rename with summary (--rename includes summary generation)
-python conversation_transcriber.py video.mp4 --rename
+conversation-transcriber video.mp4 --rename
 
 # With verbose output and file renaming
-python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
+conversation-transcriber video.mp4 --lang zh --verbose --rename
 
 # Fast mode (skip refinement, no summary)
-python conversation_transcriber.py video.mp4 --no-refine
+conversation-transcriber video.mp4 --no-refine
 ```
 
 ### Batch Conversation Processing
@@ -93,6 +111,10 @@ Process multiple conversation files efficiently - perfect for processing entire 
 
 **Usage:**
 ```bash
+# If installed as package
+batch-transcribe [TARGET_DIRECTORY] [OPTIONS]
+
+# Or run directly
 python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 ```
 
@@ -107,13 +129,13 @@ python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 **Examples:**
 ```bash
 # Process current directory (English default, no summaries)
-python batch_transcribe.py --verbose
+batch-transcribe --verbose
 
 # Process specific directory (Chinese with summaries)
-python batch_transcribe.py ~/Videos --lang zh --summary
+batch-transcribe ~/Videos --lang zh --summary
 
 # Process with verbose output (Japanese, no refinement)
-python batch_transcribe.py . --lang ja --verbose --force --no-refine
+batch-transcribe . --lang ja --verbose --force --no-refine
 ```
 
 
