@@ -62,7 +62,7 @@ python conversation_transcriber.py input_file [OPTIONS]
 ```
 
 **Options:**
-- `--rename`: Auto-rename files based on content summary
+- `--rename`: Auto-rename files based on content summary (includes summary generation)
 - `--force`: Overwrite existing output files
 - `--verbose`: Show detailed progress and real-time output
 - `--no-refine`: Skip transcript refinement (faster processing)
@@ -77,8 +77,11 @@ python conversation_transcriber.py video.mp4
 # Chinese transcription with summary
 python conversation_transcriber.py video.mp4 --lang zh --summary
 
-# With verbose output, file renaming, and summary
-python conversation_transcriber.py video.mp4 --lang zh --verbose --rename --summary
+# Auto-rename with summary (--rename includes summary generation)
+python conversation_transcriber.py video.mp4 --rename
+
+# With verbose output and file renaming
+python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
 
 # Fast mode (skip refinement, no summary)
 python conversation_transcriber.py video.mp4 --no-refine
@@ -119,24 +122,24 @@ python batch_transcribe.py . --lang ja --verbose --force --no-refine
 For each conversation, you'll get organized, searchable files:
 
 1. **🎤 Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels and timestamps
-2. **✨ Refined Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined, readable version with proper punctuation
-3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions (only with `--summary`)
+2. **✨ Refined Transcript** (`*.gpu.speakers.refined_transcript.txt`): AI-refined, readable version with proper punctuation
+3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions (only with `--summary` or `--rename`)
 4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
 5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date and conversation topic
 
 ## 🌍 Language Support
 
 ### Supported Languages
-- **🇨🇳 zh**: Chinese (Traditional/Simplified)
-- **🇺🇸 en**: English (default)
-- **🇯🇵 ja**: Japanese
-- **🇰🇷 ko**: Korean
-- **🇫🇷 fr**: French
-- **🇩🇪 de**: German
-- **🇪🇸 es**: Spanish
-- **🇮🇹 it**: Italian
-- **🇵🇹 pt**: Portuguese
-- **🇷🇺 ru**: Russian
+- **zh**: Chinese (Traditional/Simplified)
+- **en**: English (default)
+- **ja**: Japanese
+- **ko**: Korean
+- **fr**: French
+- **de**: German
+- **es**: Spanish
+- **it**: Italian
+- **pt**: Portuguese
+- **ru**: Russian
 
 ### Language Selection
 - **Default**: English is used automatically

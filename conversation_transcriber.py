@@ -340,6 +340,7 @@ def main():
         print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-refine --summary --lang LANGUAGE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --summary: Generate conversation summary (slower but more complete)")
+        print("  --rename: Auto-rename files and generate summary for filename")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
         print("  Note: English is used by default. Use --lang to specify other languages.")
         print("  Examples:")
@@ -347,6 +348,7 @@ def main():
         print("    python script.py video.mp4 --lang zh")
         print("    python script.py video.mp4 --lang ja --summary")
         print("    python script.py video.mp4 --lang en --summary --verbose")
+        print("    python script.py video.mp4 --rename  # Auto-rename with summary")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -354,7 +356,7 @@ def main():
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
     skip_refinement = '--no-refine' in sys.argv
-    should_generate_summary = '--summary' in sys.argv
+    should_generate_summary = '--summary' in sys.argv or rename_file  # Generate summary if --summary or --rename is used
     
     # Parse language argument
     language = 'en'  # Default to English
@@ -388,22 +390,22 @@ def main():
     output_prefix = base
 
     raw_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.raw_transcript.txt")
-    good_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.clean_transcript.txt")
+    good_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.refined_transcript.txt")
     summary_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.summary.txt")
 
     if os.path.exists(good_transcript_path) and not force:
         if should_generate_summary and os.path.exists(summary_path):
-            log("Both clean transcript and summary already exist. Use --force to overwrite.")
+            log("Both refined transcript and summary already exist. Use --force to overwrite.")
             sys.exit(0)
         elif not should_generate_summary:
-            log("Clean transcript already exists. Use --force to overwrite.")
+            log("Refined transcript already exists. Use --force to overwrite.")
             sys.exit(0)
 
     # ---- STEP 1: get or generate good_transcript ----
     if os.path.exists(good_transcript_path) and not force:
         with open(good_transcript_path, "r", encoding="utf-8") as f:
             good_transcript = f.read()
-        log(f"Found existing clean transcript at {good_transcript_path}")
+        log(f"Found existing refined transcript at {good_transcript_path}")
     else:
         pipeline = load_diarization_pipeline(HF_TOKEN)
         transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose, language)
@@ -425,8 +427,8 @@ def main():
         else:
             long_summary = generate_summary(good_transcript, summary_path)
     else:
-        log("Skipping summary generation (use --summary flag to enable)")
-        long_summary = "No summary generated. Use --summary flag to generate conversation summary."
+        log("Skipping summary generation (use --summary or --rename flag to enable)")
+        long_summary = "No summary generated. Use --summary or --rename flag to generate conversation summary."
 
     # Save .srt subtitles (from original transcript, not cleaned)
     if os.path.exists(raw_transcript_path):
@@ -466,7 +468,7 @@ def main():
 
         # --- Rename transcript and summary files ---
         new_raw_transcript_path = os.path.join(basepath, f"{new_base}.gpu.speakers.raw_transcript.txt")
-        new_good_transcript_path = os.path.join(basepath, f"{new_base}.gpu.speakers.clean_transcript.txt")
+        new_good_transcript_path = os.path.join(basepath, f"{new_base}.gpu.speakers.refined_transcript.txt")
         new_summary_path = os.path.join(basepath, f"{new_base}.gpu.speakers.summary.txt")
         new_srt_path = os.path.join(basepath, f"{new_base}.srt")
         def safe_rename(src, dst):
