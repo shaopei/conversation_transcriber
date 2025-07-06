@@ -1,21 +1,37 @@
-# Transcription and Summarization Project
+# Conversation Transcriber
 
-A comprehensive Python toolkit for transcribing audio/video files, generating summaries, and managing speaker diarization with multilingual support.
+Transform your conversations into organized, searchable transcripts with AI-powered speaker separation and intelligent summarization. Perfect for meetings, interviews, therapy sessions, podcasts, and any multi-speaker recordings.
 
-## Features
+## ✨ Key Features
 
-- **Speaker Diarization**: Automatically identifies and separates different speakers
-- **Multilingual Support**: Chinese, English, Japanese, Korean, French, German, Spanish, Italian, Portuguese, Russian
-- **Language Support**: English by default, other languages via --lang option
-- **Batch Processing**: Process multiple files efficiently
-- **Smart File Renaming**: Auto-rename files based on content summary
-- **SRT Subtitle Generation**: Create subtitle files for videos
-- **Transcript Cleaning**: AI-powered transcript refinement
-- **Detailed Logging**: Verbose mode for debugging and monitoring
+- **🎤 Smart Speaker Separation**: Automatically identifies and labels different speakers in conversations
+- **🌍 Multilingual Conversations**: Support for 10+ languages including Chinese, English, Japanese, Korean, French, German, Spanish, Italian, Portuguese, Russian
+- **🤖 AI-Powered Cleaning**: Intelligent transcript refinement that removes filler words and fixes common errors
+- **📝 Intelligent Summaries**: Generate comprehensive summaries of conversations (up to 1000 words)
+- **🎬 Subtitle Generation**: Create SRT subtitle files for video players
+- **📁 Smart File Organization**: Auto-rename files based on conversation content
+- **⚡ Batch Processing**: Process multiple conversation files efficiently
+- **🔍 Detailed Progress Tracking**: Real-time monitoring with verbose mode
 
-## Prerequisites
+## 🚀 Quick Start
 
-### Required Software
+### What You'll Get
+- **Speaker-labeled transcripts** with timestamps
+- **Clean, readable text** with proper punctuation
+- **Intelligent summaries** capturing key points
+- **Searchable conversation records** for easy reference
+
+### Perfect For
+- **Business Meetings**: Capture action items and decisions
+- **Interviews**: Document Q&A sessions with speaker clarity
+- **Therapy Sessions**: Maintain detailed session records
+- **Podcasts**: Create show notes and transcripts
+- **Academic Discussions**: Document research conversations
+- **Legal Proceedings**: Maintain accurate conversation records
+
+## 📋 Requirements
+
+### Software Requirements
 - **FFmpeg**: For audio/video conversion
 - **Python 3.8+**: For running the scripts
 
@@ -24,7 +40,7 @@ A comprehensive Python toolkit for transcribing audio/video files, generating su
 pip install openai pyannote.audio pydub torch pywhispercpp python-dotenv
 ```
 
-### Environment Setup
+### API Keys Setup
 1. Create a `.env` file in the project directory:
 ```bash
 HF_TOKEN=your_huggingface_token_here
@@ -34,11 +50,11 @@ OPENAI_API_KEY=your_openai_api_key_here
 2. Get your HuggingFace token from [HuggingFace](https://huggingface.co/settings/tokens)
 3. Get your OpenAI API key from [OpenAI](https://platform.openai.com/api-keys)
 
-## Scripts Overview
+## 🛠️ Usage Guide
 
-### Main Script: `conversation_transcriber.py`
+### Single Conversation Processing
 
-The primary script for processing individual audio/video files.
+Process one conversation file at a time with full control over options.
 
 **Usage:**
 ```bash
@@ -67,9 +83,9 @@ python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
 python conversation_transcriber.py video.mp4 --no-clean
 ```
 
-### Batch Processing: `batch_transcribe.py`
+### Batch Conversation Processing
 
-Process multiple files in a directory efficiently.
+Process multiple conversation files efficiently - perfect for processing entire folders of recordings.
 
 **Usage:**
 ```bash
@@ -96,61 +112,69 @@ python batch_transcribe.py . --lang ja --verbose --force
 ```
 
 
-## Output Files
+## 📄 Output Files
 
-For each input file, the script generates:
+For each conversation, you'll get organized, searchable files:
 
-1. **Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels
-2. **Clean Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined transcript
-3. **Summary** (`*.gpu.speakers.summary.txt`): Content summary (up to 1000 words)
-4. **SRT Subtitles** (`*.srt`): Subtitle file for video players
-5. **Renamed Files** (if `--rename` used): Original file renamed with date and summary
+1. **🎤 Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels and timestamps
+2. **✨ Clean Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined, readable version with proper punctuation
+3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions
+4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
+5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date and conversation topic
 
-## Language Support
+## 🌍 Language Support
 
 ### Supported Languages
-- **zh**: Chinese (Traditional/Simplified)
-- **en**: English
-- **ja**: Japanese
-- **ko**: Korean
-- **fr**: French
-- **de**: German
-- **es**: Spanish
-- **it**: Italian
-- **pt**: Portuguese
-- **ru**: Russian
-- **auto**: Auto-detection (available in language prompt, but not recommended)
+- **🇨🇳 zh**: Chinese (Traditional/Simplified)
+- **🇺🇸 en**: English (default)
+- **🇯🇵 ja**: Japanese
+- **🇰🇷 ko**: Korean
+- **🇫🇷 fr**: French
+- **🇩🇪 de**: German
+- **🇪🇸 es**: Spanish
+- **🇮🇹 it**: Italian
+- **🇵🇹 pt**: Portuguese
+- **🇷🇺 ru**: Russian
 
 ### Language Selection
-- **Default**: English is used if no language is specified
-- **Optional**: Use `--lang` option to specify other languages
-- Supported languages: zh, ja, ko, fr, de, es, it, pt, ru
-- For batch processing, `--lang` is optional (defaults to English)
+- **Default**: English is used automatically
+- **Other Languages**: Use `--lang` option to specify
+- **Batch Processing**: Works with any supported language
 
-## Processing Pipeline
+### Testing Status
+- **✅ Fully Tested**: English, Chinese
+- **⚠️ Limited Testing**: Japanese, Korean, French, German, Spanish, Italian, Portuguese, Russian
+- **💡 Recommendation**: For best results, use English or Chinese. Other languages may have varying accuracy.
 
-1. **Audio Conversion**: Convert to mono 16kHz WAV format
-2. **Speaker Diarization**: Identify and separate speakers
-3. **Transcription**: Generate raw transcript with timestamps
-4. **Language Selection**: Use specified language or default to English
-5. **Transcript Cleaning**: AI-powered refinement and formatting
-6. **Summary Generation**: Create content summary
-7. **File Renaming**: Optionally rename based on summary
-8. **SRT Generation**: Create subtitle file
+### Hardware Testing
+- **✅ Tested**: MacBook Pro M4
+- **⚠️ Untested**: Other macOS versions, Windows, Linux
+- **💡 Note**: Performance may vary on different hardware configurations
 
-## Performance Tips
+## 🔄 How It Works
 
-### Speed Optimization
-- Use `--no-clean` for faster processing (skips transcript refinement)
-- Use smaller Whisper models for faster transcription
-- Process files in parallel using batch script
+1. **🎵 Audio Processing**: Convert your recording to optimal format
+2. **👥 Speaker Detection**: AI identifies and separates different speakers
+3. **📝 Transcription**: Generate accurate text with timestamps
+4. **🌍 Language Processing**: Apply language-specific optimizations
+5. **✨ AI Cleaning**: Remove filler words and fix errors
+6. **📋 Summarization**: Create intelligent summaries of key points
+7. **📁 Organization**: Optionally rename files based on content
+8. **🎬 Subtitle Creation**: Generate ready-to-use subtitle files
 
-### Quality Optimization
-- Use `--verbose` to monitor progress and catch issues
-- Specify language with `--lang` for non-English content
+## ⚡ Performance Tips
+
+### 🚀 Speed Optimization
+- Use `--no-clean` for faster processing (skips AI refinement)
+- Process multiple files with batch script for efficiency
+- Use `--verbose` to monitor progress in real-time
+
+### 🎯 Quality Optimization
+- Specify language with `--lang` for better accuracy
 - Use `--force` to regenerate existing outputs
+- Monitor logs for any processing issues
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
@@ -173,22 +197,22 @@ For each input file, the script generates:
    - Use `--no-clean` for faster processing
    - Check internet connection for API calls
 
-### Log Files
+### 📋 Log Files
 - Batch processing creates `batch_transcribe.log` in current directory
 - Check logs for detailed error information
 
-## File Formats
+## 📁 File Formats
 
 ### Input Formats
-- **Video**: .mov, .mp4
-- **Audio**: .mp3, .wav, .m4a
+- **🎬 Video**: .mov, .mp4
+- **🎵 Audio**: .mp3, .wav, .m4a
 
 ### Output Formats
-- **Text**: .txt (UTF-8 encoding)
-- **Subtitles**: .srt
-- **Logs**: .log
+- **📄 Text**: .txt (UTF-8 encoding)
+- **🎬 Subtitles**: .srt
+- **📋 Logs**: .log
 
-## Configuration
+## ⚙️ Configuration
 
 ### Environment Variables
 ```bash
@@ -196,13 +220,13 @@ HF_TOKEN=your_huggingface_token
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-### Model Settings
-- **Whisper Model**: `large-v3` (default)
-- **Speaker Diarization**: `pyannote/speaker-diarization-3.1`
-- **Summary Model**: `gpt-4o`
-- **Cleaning Model**: `gpt-4.1-mini`
+### AI Models Used
+- **🎤 Whisper Model**: `large-v3` (high-accuracy transcription)
+- **👥 Speaker Diarization**: `pyannote/speaker-diarization-3.1` (speaker separation)
+- **📝 Summary Model**: `gpt-4o` (intelligent summarization)
+- **✨ Cleaning Model**: `gpt-4.1-mini` (transcript refinement)
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -210,11 +234,11 @@ OPENAI_API_KEY=your_openai_api_key
 4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 📄 License
 
 This project is for personal use. Please respect the terms of service for OpenAI and HuggingFace APIs.
 
-## Support
+## 💬 Support
 
 For issues and questions:
 1. Check the troubleshooting section
