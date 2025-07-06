@@ -292,13 +292,13 @@ def generate_filename_summary(long_summary):
     language = detect_language(long_summary)
     
     if language.startswith('zh'):
-        summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在30個字以內，不要包含任何前綴，只需主題內容：
+        summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在10個字以內，不要包含任何前綴，只需主題內容：
 ---
 {long_summary}
 """
     else:
         # English and other languages
-        summary_prompt = f"""Based on the following transcript, give me a one-sentence summary suitable as a filename (include the topic, important events, or names mentioned multiple times by the speaker). Keep it within 30 words, no prefixes, just the topic content:
+        summary_prompt = f"""Based on the following transcript, give me a one-sentence summary suitable as a filename (include the topic, important events, or names mentioned multiple times by the speaker). Keep it within 10 words, no prefixes, just the topic content:
 ---
 {long_summary}
 """
@@ -404,12 +404,13 @@ def main():
     good_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.refined_transcript.txt")
     summary_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.summary.txt")
 
-    if os.path.exists(good_transcript_path) and not force:
+    # Only exit early if we're not doing rename and files exist
+    if os.path.exists(good_transcript_path) and not force and not rename_file:
         if should_generate_summary and os.path.exists(summary_path):
-            log("Both refined transcript and summary already exist. Use --force to overwrite.")
+            log("Both refined transcript and summary already exist. Use --force to overwrite or --rename to rename existing files.")
             sys.exit(0)
         elif not should_generate_summary:
-            log("Refined transcript already exists. Use --force to overwrite.")
+            log("Refined transcript already exists. Use --force to overwrite or --rename to rename existing files.")
             sys.exit(0)
 
     # ---- STEP 1: get or generate good_transcript ----
