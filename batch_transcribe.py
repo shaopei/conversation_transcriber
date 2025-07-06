@@ -33,7 +33,7 @@ def main():
         print("  Directory containing video files (default: current directory)")
         print("")
         print("OPTIONS:")
-        print("  --no-clean     Skip transcript cleaning (faster)")
+        print("  --no-refine    Skip transcript refinement (faster)")
         print("  --verbose      Show detailed progress")
         print("  --force        Overwrite existing output files")
         print("  --lang LANG    Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
@@ -42,7 +42,7 @@ def main():
         print("EXAMPLES:")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py . --verbose")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-clean")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-refine")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos  # Uses English (default)")
         return
     
@@ -78,9 +78,9 @@ def main():
     
     # Check for command line options
     args = []
-    if "--no-clean" in sys.argv:
-        args.append("--no-clean")
-        log("Using --no-clean mode (faster processing)")
+    if "--no-refine" in sys.argv:
+        args.append("--no-refine")
+        log("Using --no-refine mode (faster processing)")
     if "--verbose" in sys.argv:
         args.append("--verbose")
         log("Using --verbose mode (detailed output)")

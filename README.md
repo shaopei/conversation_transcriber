@@ -65,7 +65,7 @@ python conversation_transcriber.py input_file [OPTIONS]
 - `--rename`: Auto-rename files based on content summary
 - `--force`: Overwrite existing output files
 - `--verbose`: Show detailed progress and real-time output
-- `--no-clean`: Skip transcript cleaning (faster processing)
+- `--no-refine`: Skip transcript refinement (faster processing)
 - `--lang LANGUAGE`: Specify language (zh, en, ja, ko, fr, de, es, it, pt, ru)
 
 **Examples:**
@@ -79,8 +79,8 @@ python conversation_transcriber.py video.mp4 --lang zh
 # With verbose output and file renaming
 python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
 
-# Fast mode (skip cleaning)
-python conversation_transcriber.py video.mp4 --no-clean
+# Fast mode (skip refinement)
+python conversation_transcriber.py video.mp4 --no-refine
 ```
 
 ### Batch Conversation Processing
@@ -93,7 +93,7 @@ python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 ```
 
 **Options:**
-- `--no-clean`: Skip transcript cleaning (faster)
+- `--no-refine`: Skip transcript refinement (faster)
 - `--verbose`: Show detailed progress from main script
 - `--force`: Overwrite existing output files
 - `--lang LANG`: Specify language for all files
@@ -105,7 +105,7 @@ python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 python batch_transcribe.py --verbose
 
 # Process specific directory (Chinese)
-python batch_transcribe.py ~/Videos --lang zh --no-clean
+python batch_transcribe.py ~/Videos --lang zh --no-refine
 
 # Process with verbose output (Japanese)
 python batch_transcribe.py . --lang ja --verbose --force
@@ -117,7 +117,7 @@ python batch_transcribe.py . --lang ja --verbose --force
 For each conversation, you'll get organized, searchable files:
 
 1. **🎤 Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels and timestamps
-2. **✨ Clean Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined, readable version with proper punctuation
+2. **✨ Refined Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined, readable version with proper punctuation
 3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions
 4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
 5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date and conversation topic
@@ -157,7 +157,7 @@ For each conversation, you'll get organized, searchable files:
 2. **👥 Speaker Detection**: AI identifies and separates different speakers
 3. **📝 Transcription**: Generate accurate text with timestamps
 4. **🌍 Language Processing**: Apply language-specific optimizations
-5. **✨ AI Cleaning**: Remove filler words and fix errors
+5. **✨ AI Refinement**: Remove filler words and fix errors
 6. **📋 Summarization**: Create intelligent summaries of key points
 7. **📁 Organization**: Optionally rename files based on content
 8. **🎬 Subtitle Creation**: Generate ready-to-use subtitle files
@@ -165,7 +165,7 @@ For each conversation, you'll get organized, searchable files:
 ## ⚡ Performance Tips
 
 ### 🚀 Speed Optimization
-- Use `--no-clean` for faster processing (skips AI refinement)
+- Use `--no-refine` for faster processing (skips AI refinement)
 - Process multiple files with batch script for efficiency
 - Use `--verbose` to monitor progress in real-time
 
@@ -190,11 +190,11 @@ For each conversation, you'll get organized, searchable files:
    - Check token permissions and quotas
 
 3. **Memory issues with large files**
-   - Use `--no-clean` to reduce memory usage
+   - Use `--no-refine` to reduce memory usage
    - Process files individually instead of batch
 
 4. **Timeout errors**
-   - Use `--no-clean` for faster processing
+   - Use `--no-refine` for faster processing
    - Check internet connection for API calls
 
 ### 📋 Log Files
@@ -224,7 +224,7 @@ OPENAI_API_KEY=your_openai_api_key
 - **🎤 Whisper Model**: `large-v3` (high-accuracy transcription)
 - **👥 Speaker Diarization**: `pyannote/speaker-diarization-3.1` (speaker separation)
 - **📝 Summary Model**: `gpt-4o` (intelligent summarization)
-- **✨ Cleaning Model**: `gpt-4.1-mini` (transcript refinement)
+- **✨ Refinement Model**: `gpt-4.1-mini` (transcript refinement)
 
 ## 🤝 Contributing
 

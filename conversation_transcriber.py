@@ -337,8 +337,8 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-clean --lang LANGUAGE]")
-        print("  --no-clean: Skip transcript cleaning (much faster, avoids timeout issues)")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-refine --lang LANGUAGE]")
+        print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
         print("  Note: English is used by default. Use --lang to specify other languages.")
         print("  Examples:")
@@ -352,7 +352,7 @@ def main():
     rename_file = '--rename' in sys.argv
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
-    skip_cleaning = '--no-clean' in sys.argv
+    skip_refinement = '--no-refine' in sys.argv
     
     # Parse language argument
     language = 'en'  # Default to English
@@ -402,8 +402,8 @@ def main():
         pipeline = load_diarization_pipeline(HF_TOKEN)
         transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose, language)
         
-        if skip_cleaning:
-            log("Skipping transcript cleaning (--no-clean flag used)")
+        if skip_refinement:
+            log("Skipping transcript refinement (--no-refine flag used)")
             good_transcript = transcript
             with open(good_transcript_path, 'w', encoding='utf-8') as f:
                 f.write(good_transcript)
