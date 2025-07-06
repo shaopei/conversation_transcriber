@@ -7,7 +7,7 @@ import sys
 
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.join(SCRIPT_DIR, "transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py")
+SCRIPT = os.path.join(SCRIPT_DIR, "conversation_transcriber.py")
 
 def log(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

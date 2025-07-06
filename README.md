@@ -36,13 +36,13 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 ## Scripts Overview
 
-### Main Script: `transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py`
+### Main Script: `conversation_transcriber.py`
 
 The primary script for processing individual audio/video files.
 
 **Usage:**
 ```bash
-python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py input_file [OPTIONS]
+python conversation_transcriber.py input_file [OPTIONS]
 ```
 
 **Options:**
@@ -55,16 +55,16 @@ python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename
 **Examples:**
 ```bash
 # Basic usage (English default)
-python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py video.mp4
+python conversation_transcriber.py video.mp4
 
 # Chinese transcription
-python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py video.mp4 --lang zh
+python conversation_transcriber.py video.mp4 --lang zh
 
 # With verbose output and file renaming
-python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py video.mp4 --lang zh --verbose --rename
+python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
 
 # Fast mode (skip cleaning)
-python transcribe_and_summarize_recording_zhOnly_assign.speaker_optionaly.rename.py video.mp4 --no-clean
+python conversation_transcriber.py video.mp4 --no-clean
 ```
 
 ### Batch Processing: `batch_transcribe.py`
