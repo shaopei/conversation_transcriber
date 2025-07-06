@@ -31,12 +31,17 @@ def ensure_wav_mono_16k(input_path):
     base, ext = os.path.splitext(input_path)
     out_wav = base + "_16k_mono.wav"
     
+    # Check if the expected WAV file already exists
+    if os.path.exists(out_wav):
+        log(f"Found existing WAV file at {out_wav}, using it.")
+        return out_wav, False  # False means we didn't create it
+    
     # Check if input is already the right format
     if ext.lower() == ".wav":
         try:
             with wave.open(input_path, 'rb') as wf:
                 if wf.getnchannels() == 1 and wf.getframerate() == 16000:
-                    return input_path
+                    return input_path, False  # False means we didn't create it
         except Exception as e:
             log(f"Warning: Could not check WAV format: {e}")
     
@@ -45,7 +50,7 @@ def ensure_wav_mono_16k(input_path):
     try:
         subprocess.run(['ffmpeg', '-y', '-i', input_path, '-ar', '16000', '-ac', '1', out_wav], 
                       check=True, capture_output=True, text=True)
-        return out_wav
+        return out_wav, True  # True means we created it
     except subprocess.CalledProcessError as e:
         log(f"FFmpeg conversion failed: {e}")
         log(f"FFmpeg stderr: {e.stderr}")
@@ -131,13 +136,16 @@ def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbo
         with open(raw_transcript_path, "r", encoding="utf-8") as f:
             return f.read()
     else:
-        audio_file = ensure_wav_mono_16k(input_file)
+        audio_file, was_created = ensure_wav_mono_16k(input_file)
         transcript = run_diarization_and_transcription(audio_file, pipeline, verbose=verbose, language=language)
         with open(raw_transcript_path, "w", encoding="utf-8") as f:
             f.write(transcript)
-        if audio_file.endswith("_16k_mono.wav") and os.path.exists(audio_file):
+        # Only delete the WAV file if we created it
+        if was_created and audio_file.endswith("_16k_mono.wav") and os.path.exists(audio_file):
             os.remove(audio_file)
             log(f"Deleted temporary file: {audio_file}")
+        elif was_created:
+            log(f"Keeping WAV file: {audio_file}")
         return transcript
 
 def clean_transcript(transcript, good_transcript_path):
