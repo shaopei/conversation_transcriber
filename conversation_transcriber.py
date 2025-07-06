@@ -337,15 +337,16 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-refine --lang LANGUAGE]")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-refine --summary --lang LANGUAGE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
+        print("  --summary: Generate conversation summary (slower but more complete)")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
         print("  Note: English is used by default. Use --lang to specify other languages.")
         print("  Examples:")
         print("    python script.py video.mp4  # Uses English (default)")
         print("    python script.py video.mp4 --lang zh")
-        print("    python script.py video.mp4 --lang ja")
-        print("    python script.py video.mp4 --lang en")
+        print("    python script.py video.mp4 --lang ja --summary")
+        print("    python script.py video.mp4 --lang en --summary --verbose")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -353,6 +354,7 @@ def main():
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
     skip_refinement = '--no-refine' in sys.argv
+    should_generate_summary = '--summary' in sys.argv
     
     # Parse language argument
     language = 'en'  # Default to English
@@ -389,9 +391,13 @@ def main():
     good_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.clean_transcript.txt")
     summary_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.summary.txt")
 
-    if os.path.exists(good_transcript_path) and os.path.exists(summary_path) and not force:
-        log("Both clean transcript and summary already exist. Use --force to overwrite.")
-        sys.exit(0)
+    if os.path.exists(good_transcript_path) and not force:
+        if should_generate_summary and os.path.exists(summary_path):
+            log("Both clean transcript and summary already exist. Use --force to overwrite.")
+            sys.exit(0)
+        elif not should_generate_summary:
+            log("Clean transcript already exists. Use --force to overwrite.")
+            sys.exit(0)
 
     # ---- STEP 1: get or generate good_transcript ----
     if os.path.exists(good_transcript_path) and not force:
@@ -411,12 +417,16 @@ def main():
             good_transcript = clean_transcript(transcript, good_transcript_path)
 
     # ---- STEP 2: get or generate summary ----
-    if os.path.exists(summary_path) and not force:
-        log(f"Found existing summary at {summary_path}")
-        with open(summary_path, "r", encoding="utf-8") as f:
-            long_summary = f.read()
+    if should_generate_summary:
+        if os.path.exists(summary_path) and not force:
+            log(f"Found existing summary at {summary_path}")
+            with open(summary_path, "r", encoding="utf-8") as f:
+                long_summary = f.read()
+        else:
+            long_summary = generate_summary(good_transcript, summary_path)
     else:
-        long_summary = generate_summary(good_transcript, summary_path)
+        log("Skipping summary generation (use --summary flag to enable)")
+        long_summary = "No summary generated. Use --summary flag to generate conversation summary."
 
     # Save .srt subtitles (from original transcript, not cleaned)
     if os.path.exists(raw_transcript_path):
@@ -437,7 +447,10 @@ def main():
                 date_str = f"{d[:4]}-{d[4:6]}-{d[6:]}"
             else:
                 date_str = datetime.now().strftime('%Y-%m-%d')
-        summary_for_name = generate_filename_summary(long_summary)
+        if should_generate_summary:
+            summary_for_name = generate_filename_summary(long_summary)
+        else:
+            summary_for_name = "conversation"
         ext = os.path.splitext(input_file)[1]
         new_base = f"{date_str}_{summary_for_name}"
 
@@ -468,7 +481,8 @@ def main():
 
         safe_rename(raw_transcript_path, new_raw_transcript_path)
         safe_rename(good_transcript_path, new_good_transcript_path)
-        safe_rename(summary_path, new_summary_path)
+        if should_generate_summary:
+            safe_rename(summary_path, new_summary_path)
         safe_rename(srt_path, new_srt_path)
 
 if __name__ == "__main__":

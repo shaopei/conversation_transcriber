@@ -66,20 +66,21 @@ python conversation_transcriber.py input_file [OPTIONS]
 - `--force`: Overwrite existing output files
 - `--verbose`: Show detailed progress and real-time output
 - `--no-refine`: Skip transcript refinement (faster processing)
+- `--summary`: Generate conversation summary (slower but more complete)
 - `--lang LANGUAGE`: Specify language (zh, en, ja, ko, fr, de, es, it, pt, ru)
 
 **Examples:**
 ```bash
-# Basic usage (English default)
+# Basic usage (English default, no summary)
 python conversation_transcriber.py video.mp4
 
-# Chinese transcription
-python conversation_transcriber.py video.mp4 --lang zh
+# Chinese transcription with summary
+python conversation_transcriber.py video.mp4 --lang zh --summary
 
-# With verbose output and file renaming
-python conversation_transcriber.py video.mp4 --lang zh --verbose --rename
+# With verbose output, file renaming, and summary
+python conversation_transcriber.py video.mp4 --lang zh --verbose --rename --summary
 
-# Fast mode (skip refinement)
+# Fast mode (skip refinement, no summary)
 python conversation_transcriber.py video.mp4 --no-refine
 ```
 
@@ -94,6 +95,7 @@ python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 
 **Options:**
 - `--no-refine`: Skip transcript refinement (faster)
+- `--summary`: Generate conversation summaries
 - `--verbose`: Show detailed progress from main script
 - `--force`: Overwrite existing output files
 - `--lang LANG`: Specify language for all files
@@ -101,14 +103,14 @@ python batch_transcribe.py [TARGET_DIRECTORY] [OPTIONS]
 
 **Examples:**
 ```bash
-# Process current directory (English default)
+# Process current directory (English default, no summaries)
 python batch_transcribe.py --verbose
 
-# Process specific directory (Chinese)
-python batch_transcribe.py ~/Videos --lang zh --no-refine
+# Process specific directory (Chinese with summaries)
+python batch_transcribe.py ~/Videos --lang zh --summary
 
-# Process with verbose output (Japanese)
-python batch_transcribe.py . --lang ja --verbose --force
+# Process with verbose output (Japanese, no refinement)
+python batch_transcribe.py . --lang ja --verbose --force --no-refine
 ```
 
 
@@ -118,7 +120,7 @@ For each conversation, you'll get organized, searchable files:
 
 1. **🎤 Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels and timestamps
 2. **✨ Refined Transcript** (`*.gpu.speakers.clean_transcript.txt`): AI-refined, readable version with proper punctuation
-3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions
+3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions (only with `--summary`)
 4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
 5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date and conversation topic
 

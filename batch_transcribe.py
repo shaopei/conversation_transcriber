@@ -34,6 +34,7 @@ def main():
         print("")
         print("OPTIONS:")
         print("  --no-refine    Skip transcript refinement (faster)")
+        print("  --summary      Generate conversation summaries")
         print("  --verbose      Show detailed progress")
         print("  --force        Overwrite existing output files")
         print("  --lang LANG    Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
@@ -43,6 +44,7 @@ def main():
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py . --verbose")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-refine")
+        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --summary  # With summaries")
         print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos  # Uses English (default)")
         return
     
@@ -81,6 +83,9 @@ def main():
     if "--no-refine" in sys.argv:
         args.append("--no-refine")
         log("Using --no-refine mode (faster processing)")
+    if "--summary" in sys.argv:
+        args.append("--summary")
+        log("Using --summary mode (generating summaries)")
     if "--verbose" in sys.argv:
         args.append("--verbose")
         log("Using --verbose mode (detailed output)")
