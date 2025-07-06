@@ -337,10 +337,11 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename --force --verbose --no-refine --summary --lang LANGUAGE]")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename [PREFIX] --force --verbose --no-refine --summary --lang LANGUAGE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --summary: Generate conversation summary (slower but more complete)")
-        print("  --rename: Auto-rename files and generate summary for filename")
+        print("  --rename [PREFIX]: Auto-rename files and generate summary for filename")
+        print("                    PREFIX is optional (e.g., --rename AI_Panel_Discussion)")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
         print("  Note: English is used by default. Use --lang to specify other languages.")
         print("  Examples:")
@@ -349,10 +350,20 @@ def main():
         print("    python script.py video.mp4 --lang ja --summary")
         print("    python script.py video.mp4 --lang en --summary --verbose")
         print("    python script.py video.mp4 --rename  # Auto-rename with summary")
+        print("    python script.py video.mp4 --rename Interview_Vertex  # With custom prefix")
         sys.exit(1)
 
     input_file = sys.argv[1]
     rename_file = '--rename' in sys.argv
+    rename_prefix = None
+    
+    # Parse rename prefix if provided
+    if '--rename' in sys.argv:
+        rename_index = sys.argv.index('--rename')
+        if rename_index + 1 < len(sys.argv) and not sys.argv[rename_index + 1].startswith('--'):
+            rename_prefix = sys.argv[rename_index + 1]
+            log(f"Using rename prefix: {rename_prefix}")
+    
     verbose = '--verbose' in sys.argv
     force = '--force' in sys.argv
     skip_refinement = '--no-refine' in sys.argv
@@ -454,7 +465,12 @@ def main():
         else:
             summary_for_name = "conversation"
         ext = os.path.splitext(input_file)[1]
-        new_base = f"{date_str}_{summary_for_name}"
+        
+        # Build the new filename with optional prefix
+        if rename_prefix:
+            new_base = f"{date_str}_{rename_prefix}_{summary_for_name}"
+        else:
+            new_base = f"{date_str}_{summary_for_name}"
 
         # --- Rename main media file ---
         new_file_path = os.path.join(basepath, f"{new_base}{ext}")

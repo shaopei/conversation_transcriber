@@ -80,7 +80,7 @@ python conversation_transcriber.py input_file [OPTIONS]
 ```
 
 **Options:**
-- `--rename`: Auto-rename files based on content summary (includes summary generation)
+- `--rename [PREFIX]`: Auto-rename files based on content summary (includes summary generation)
 - `--force`: Overwrite existing output files
 - `--verbose`: Show detailed progress and real-time output
 - `--no-refine`: Skip transcript refinement (faster processing)
@@ -97,6 +97,9 @@ conversation-transcriber video.mp4 --lang zh --summary
 
 # Auto-rename with summary (--rename includes summary generation)
 conversation-transcriber video.mp4 --rename
+
+# Auto-rename with custom prefix
+conversation-transcriber video.mp4 --rename AI_Panel_Discussion
 
 # With verbose output and file renaming
 conversation-transcriber video.mp4 --lang zh --verbose --rename
@@ -147,7 +150,7 @@ For each conversation, you'll get organized, searchable files:
 2. **✨ Refined Transcript** (`*.gpu.speakers.refined_transcript.txt`): AI-refined, readable version with proper punctuation
 3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions (only with `--summary` or `--rename`)
 4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
-5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date and conversation topic
+5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date, optional prefix, and conversation topic
 
 ## 🌍 Language Support
 
