@@ -52,9 +52,12 @@ def main():
     # Get target directory from command line or use current directory
     target_dir = os.getcwd()  # Default to current directory
     
-    # Parse arguments to find target directory (first non-flag argument)
+    # Parse arguments to find target directory (first non-flag argument that's not a language value)
     for i, arg in enumerate(sys.argv[1:], 1):
         if not arg.startswith('--'):
+            # Check if this is a language value (following --lang)
+            if i > 1 and sys.argv[i-1] == '--lang':
+                continue  # Skip language values
             # This is the target directory
             target_dir = arg
             if not os.path.exists(target_dir):
@@ -87,8 +90,40 @@ def main():
     if "--lang" in sys.argv:
         lang_index = sys.argv.index("--lang")
         if lang_index + 1 < len(sys.argv) and not sys.argv[lang_index + 1].startswith("--"):
-            args.extend(["--lang", sys.argv[lang_index + 1]])
-            log(f"Using language: {sys.argv[lang_index + 1]}")
+            lang_code = sys.argv[lang_index + 1]
+            # Validate language code
+            valid_languages = ['zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'it', 'pt', 'ru']
+            if lang_code in valid_languages:
+                args.extend(["--lang", lang_code])
+                log(f"Using language: {lang_code}")
+            else:
+                print(f"\nERROR: Invalid language code '{lang_code}'")
+                print(f"Valid language options: {', '.join(valid_languages)}")
+                print("\nPlease choose an option:")
+                print("1. Enter a valid language code")
+                print("2. Continue without --lang (use English default)")
+                print("3. Exit")
+                
+                while True:
+                    choice = input("\nEnter your choice (1/2/3): ").strip()
+                    if choice == "1":
+                        new_lang = input("Enter valid language code: ").strip().lower()
+                        if new_lang in valid_languages:
+                            args.extend(["--lang", new_lang])
+                            log(f"Using corrected language: {new_lang}")
+                            break
+                        else:
+                            print(f"Invalid language code '{new_lang}'. Please try again.")
+                    elif choice == "2":
+                        log("Continuing with English as default language.")
+                        break
+                    elif choice == "3":
+                        log("Exiting batch processing.")
+                        return
+                    else:
+                        print("Invalid choice. Please enter 1, 2, or 3.")
+        else:
+            log("WARNING: --lang specified but no language given. Using English as default.")
 
     successful = 0
     failed = 0
