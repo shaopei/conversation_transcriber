@@ -263,14 +263,29 @@ def generate_summary(good_transcript, summary_path):
     language = detect_language(good_transcript)
     
     if language.startswith('zh'):
-        long_summary_prompt = f"""請根據下面的的逐字稿(可能是與心理師談話)，以主要speaker的內容寫一段1000字以內的摘要，講述她最近的生活狀態，請把人物名稱標注在內，用字自然，不要有開會的感覺，修正常見錯別字、類似音的字 例如：產修、殘修 其實都是禪修），繁體中文：
+        long_summary_prompt = f"""請根據下面的逐字稿，寫一段1000字以內的摘要，涵蓋所有主要speaker的內容和觀點。請：
+
+1. 識別並總結每個主要speaker的重要觀點和貢獻
+2. 描述他們討論的主題、問題或事件
+3. 記錄任何重要的決定、結論或行動項目
+4. 把人物名稱標注在內
+5. 用字自然，不要有太生硬開會的感覺
+6. 修正常見錯別字、類似音的字（例如：產修、殘修 其實都是禪修）
+7. 繁體中文
 
 ---
 {good_transcript}
 """
     else:
         # English and other languages
-        long_summary_prompt = f"""Based on the following transcript (possibly a therapy session), write a summary of up to 1000 words focusing on the main speaker's content, describing their recent life situation. Include person names mentioned, use natural language, avoid formal meeting tone, and fix common typos and similar-sounding words:
+        long_summary_prompt = f"""Based on the following transcript, write a summary of up to 1000 words covering all main speakers' content and perspectives. Please:
+
+1. Identify and summarize each main speaker's key points and contributions
+2. Describe the topics, issues, or events they discussed
+3. Note any important decisions, conclusions, or action items
+4. Include person names mentioned
+5. Use natural language, avoid too formal meeting tone
+6. Fix common typos and similar-sounding words
 
 ---
 {good_transcript}
@@ -300,13 +315,13 @@ def generate_filename_summary(long_summary):
     language = detect_language(long_summary)
     
     if language.startswith('zh'):
-        summary_prompt = f"""根據下面的逐字稿，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或被speaker提到多次的名字），請保持在10個字以內，不要包含任何前綴，只需主題內容：
+        summary_prompt = f"""根據下面的摘要，請給我一句話摘要，適合作為檔案名稱（盡量包含主題、重要事件或主要speaker的名字），請保持在10個字以內，不要包含任何前綴，只需主題內容：
 ---
 {long_summary}
 """
     else:
         # English and other languages
-        summary_prompt = f"""Based on the following transcript, give me a one-sentence summary suitable as a filename (include the topic, important events, or names mentioned multiple times by the speaker). Keep it within 10 words, no prefixes, just the topic content:
+        summary_prompt = f"""Based on the following summary, give me a one-sentence summary suitable as a filename (include the topic, important events, or names of main speakers). Keep it within 10 words, no prefixes, just the topic content:
 ---
 {long_summary}
 """
