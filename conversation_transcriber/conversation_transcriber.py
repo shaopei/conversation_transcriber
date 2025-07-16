@@ -60,8 +60,17 @@ def ensure_wav_mono_16k(input_path):
         raise
 
 def load_diarization_pipeline(token):
-    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-    print(f"Using device: {device}")
+    # Enhanced device detection for all GPU types
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")  # Apple Silicon/Intel Mac with Metal
+        print(f"Using device: {device} (Apple Metal GPU)")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")  # NVIDIA GPU
+        print(f"Using device: {device} (NVIDIA GPU)")
+    else:
+        device = torch.device("cpu")  # CPU fallback
+        print(f"Using device: {device} (CPU)")
+    
     pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=token)
     pipeline.to(device)
     return pipeline

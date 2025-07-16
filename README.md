@@ -177,9 +177,9 @@ For each conversation, you'll get organized, searchable files:
 - **💡 Recommendation**: For best results, use English or Chinese. Other languages may have varying accuracy.
 
 ### Hardware Testing
-- **✅ Tested**: MacBook Pro M4
+- **✅ Tested**: MacBook Pro M4 (Apple Silicon with MPS GPU acceleration)
 - **⚠️ Untested**: Other macOS versions, Windows, Linux
-- **💡 Note**: Performance may vary on different hardware configurations
+- **💡 Note**: The script supports multiple GPU types (MPS for Apple, CUDA for NVIDIA, OpenCL for AMD) but has only been tested on M4. Performance may vary on different hardware configurations.
 
 ## 🔄 How It Works
 
