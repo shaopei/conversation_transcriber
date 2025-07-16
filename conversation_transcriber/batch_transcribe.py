@@ -41,11 +41,11 @@ def main():
         print("  --help, -h     Show this help message")
         print("")
         print("EXAMPLES:")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py . --verbose")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --lang zh --no-refine")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos --summary  # With summaries")
-        print("  python3 ~/projects/transcrib_and_summary/batch_transcribe.py ~/Videos  # Uses English (default)")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py . --verbose")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --lang zh --no-refine")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --summary  # With summaries")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos  # Uses English (default)")
         return
     
     if not check_script_exists():
