@@ -196,6 +196,7 @@ def detect_language(text):
 def clean_transcript_chunk(transcript_chunk):
     # Detect language and create appropriate prompt
     language = detect_language(transcript_chunk)
+    log(f"Detected language for this chunk: {language}")
     
     if language.startswith('zh'):
         clean_prompt = f"""請修飾下面的逐字稿：
@@ -229,7 +230,7 @@ def clean_transcript_chunk(transcript_chunk):
             response_clean = openai.chat.completions.create(
                 model="gpt-4.1-mini",
                 messages=[
-                    {"role": "system", "content": "你是一個優秀的中文逐字稿修飾助手。"},
+                    {"role": "system", "content": "You are an expert transcript editor, fluent in English, Chinese, and occasionally French. Keep the original wording as much as possible. Improve clarity and flow, and carefully check for mis-transcribed words, especially similar-sounding ones with different meanings, while preserving the speaker’s intent."},
                     {"role": "user", "content": clean_prompt},
                 ],
                 temperature=0.2,
