@@ -31,17 +31,19 @@ Transform your conversations into organized, searchable transcripts with AI-powe
 
 ## 📦 Installation
 
-### Option 1: Install from PyPI (Recommended)
+### Option 1: Install from GitHub (Recommended)
 ```bash
-pip install conversation-transcriber
+pip install git+https://github.com/shaopei/conversation_transcriber.git
 ```
 
 ### Option 2: Install from Source
 ```bash
-git clone https://github.com/yourusername/conversation-transcriber.git
-cd conversation-transcriber
+git clone https://github.com/shaopei/conversation_transcriber.git
+cd conversation_transcriber
 pip install -e .
 ```
+
+> **Note:** This package is not published on PyPI yet. Please use the GitHub installation methods above.
 
 ## 📋 Requirements
 
