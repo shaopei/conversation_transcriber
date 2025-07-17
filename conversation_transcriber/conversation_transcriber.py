@@ -451,17 +451,17 @@ def main():
     output_prefix = base
 
     # Add language code to output file names, but avoid duplicate lang codes
-    def add_lang_code(base, lang_code, ext):
-        # If base already ends with _<lang_code>, don't add again
-        if base.endswith(f"_{lang_code}"):
+    # Use 'language' directly for file naming
+    def add_land_index(base, language, ext):
+        if base.endswith(f"_{language}"):
             return f"{base}{ext}"
         else:
-            return f"{base}_{lang_code}{ext}"
+            return f"{base}_{language}{ext}"
 
-    raw_transcript_path = os.path.join(basepath, add_lang_code(output_prefix + ".raw_transcript", lang_code, ".txt"))
-    good_transcript_path = os.path.join(basepath, add_lang_code(output_prefix + ".refined_transcript", lang_code, ".txt"))
-    summary_path = os.path.join(basepath, add_lang_code(output_prefix + ".summary", lang_code, ".txt"))
-    srt_path = os.path.join(basepath, add_lang_code(output_prefix, lang_code, ".srt"))
+    raw_transcript_path = os.path.join(basepath, add_land_index(output_prefix + ".raw_transcript", language, ".txt"))
+    good_transcript_path = os.path.join(basepath, add_land_index(output_prefix + ".refined_transcript", language, ".txt"))
+    summary_path = os.path.join(basepath, add_land_index(output_prefix + ".summary", language, ".txt"))
+    srt_path = os.path.join(basepath, add_land_index(output_prefix, language, ".srt"))
 
     # Only exit early if we're not doing rename and files exist
     if os.path.exists(good_transcript_path) and not force and not rename_file:
@@ -542,7 +542,7 @@ def main():
 
         # --- Rename main media file ---
         # Insert lang_code before the extension
-        new_file_path = os.path.join(basepath, f"{new_base}_{lang_code}{ext}")
+        new_file_path = os.path.join(basepath, f"{new_base}_{language}{ext}")
         if os.path.abspath(new_file_path) != os.path.abspath(input_file):
             if os.path.exists(new_file_path):
                 log(f"Target file {new_file_path} already exists. Skipping rename.")
@@ -552,10 +552,10 @@ def main():
                 log(f"已將原始檔案重新命名為: {new_file_path}")
 
         # --- Rename transcript and summary files ---
-        new_raw_transcript_path = os.path.join(basepath, add_lang_code(new_base + ".raw_transcript", lang_code, ".txt"))
-        new_good_transcript_path = os.path.join(basepath, add_lang_code(new_base + ".refined_transcript", lang_code, ".txt"))
-        new_summary_path = os.path.join(basepath, add_lang_code(new_base + ".summary", lang_code, ".txt"))
-        new_srt_path = os.path.join(basepath, add_lang_code(new_base, lang_code, ".srt"))
+        new_raw_transcript_path = os.path.join(basepath, add_land_index(new_base + ".raw_transcript", language, ".txt"))
+        new_good_transcript_path = os.path.join(basepath, add_land_index(new_base + ".refined_transcript", language, ".txt"))
+        new_summary_path = os.path.join(basepath, add_land_index(new_base + ".summary", language, ".txt"))
+        new_srt_path = os.path.join(basepath, add_land_index(new_base, language, ".srt"))
         def safe_rename(src, dst):
             if os.path.exists(src):
                 if os.path.exists(dst):
