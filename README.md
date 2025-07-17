@@ -9,7 +9,7 @@ Transform your conversations into organized, searchable transcripts with AI-powe
 - **🤖 AI-Powered Cleaning**: Intelligent transcript refinement that removes filler words and fixes common errors
 - **📝 Intelligent Summaries**: Generate comprehensive summaries of conversations (up to 1000 words)
 - **🎬 Subtitle Generation**: Create SRT subtitle files for video players
-- **📁 Smart File Organization**: Auto-rename files based on conversation content
+- **📁 Smart File Organization**: Auto-rename files based on conversation content with language codes
 - **⚡ Batch Processing**: Process multiple conversation files efficiently
 - **🔍 Detailed Progress Tracking**: Real-time monitoring with verbose mode
 
@@ -20,6 +20,7 @@ Transform your conversations into organized, searchable transcripts with AI-powe
 - **Clean, readable text** with proper punctuation
 - **Intelligent summaries** capturing key points
 - **Searchable conversation records** for easy reference
+- **Organized filenames** with language codes and clean formatting
 
 ### Perfect For
 - **Business Meetings**: Capture action items and decisions
@@ -146,13 +147,26 @@ batch-transcribe . --lang ja --verbose --force --no-refine
 
 ## 📄 Output Files
 
-For each conversation, you'll get organized, searchable files:
+For each conversation, you'll get organized, searchable files with clean naming:
 
-1. **🎤 Raw Transcript** (`*.gpu.speakers.raw_transcript.txt`): Original transcription with speaker labels and timestamps
-2. **✨ Refined Transcript** (`*.gpu.speakers.refined_transcript.txt`): AI-refined, readable version with proper punctuation
-3. **📝 Summary** (`*.gpu.speakers.summary.txt`): Intelligent summary capturing key points and decisions (only with `--summary` or `--rename`)
-4. **🎬 Subtitles** (`*.srt`): Ready-to-use subtitle files for video players
+1. **🎤 Raw Transcript** (`*.raw_transcript_[lang].txt`): Original transcription with speaker labels and timestamps
+2. **✨ Refined Transcript** (`*.refined_transcript_[lang].txt`): AI-refined, readable version with proper punctuation
+3. **📝 Summary** (`*.summary_[lang].txt`): Intelligent summary capturing key points and decisions (only with `--summary` or `--rename`)
+4. **🎬 Subtitles** (`*_[lang].srt`): Ready-to-use subtitle files for video players
 5. **📁 Renamed Files** (if `--rename` used): Original files renamed with date, optional prefix, and conversation topic
+
+### File Naming Features
+- **Language Codes**: All output files include language codes (e.g., `_en`, `_zh`, `_ja`)
+- **Date Prefixes**: Renamed files include date stamps for organization
+
+### Example Output Files
+```
+2024-11-13_AI_Panel_Discussion_Team_Structure_AI_Opportunities_Challenges.mp4
+2024-11-13_AI_Panel_Discussion_Team_Structure_AI_Opportunities_Challenges.raw_transcript_en.txt
+2024-11-13_AI_Panel_Discussion_Team_Structure_AI_Opportunities_Challenges.refined_transcript_en.txt
+2024-11-13_AI_Panel_Discussion_Team_Structure_AI_Opportunities_Challenges.summary_en.txt
+2024-11-13_AI_Panel_Discussion_Team_Structure_AI_Opportunities_Challenges_en.srt
+```
 
 ## 🌍 Language Support
 
@@ -172,6 +186,7 @@ For each conversation, you'll get organized, searchable files:
 - **Default**: English is used automatically
 - **Other Languages**: Use `--lang` option to specify
 - **Batch Processing**: Works with any supported language
+- **File Naming**: Language codes automatically added to output files
 
 ### Testing Status
 - **✅ Fully Tested**: English, Chinese
@@ -189,9 +204,9 @@ For each conversation, you'll get organized, searchable files:
 2. **👥 Speaker Detection**: AI identifies and separates different speakers
 3. **📝 Transcription**: Generate accurate text with timestamps
 4. **🌍 Language Processing**: Apply language-specific optimizations
-5. **✨ AI Refinement**: Remove filler words and fix errors
-6. **📋 Summarization**: Create intelligent summaries of key points
-7. **📁 Organization**: Optionally rename files based on content
+5. **✨ AI Refinement**: Remove filler words and fix errors (unless `--no-refine` used)
+6. **📋 Summarization**: Create intelligent summaries of key points (with `--summary` or `--rename`)
+7. **📁 Organization**: Optionally rename files based on content with clean formatting (with `--rename`)
 8. **🎬 Subtitle Creation**: Generate ready-to-use subtitle files
 
 ## ⚡ Performance Tips
@@ -228,6 +243,11 @@ For each conversation, you'll get organized, searchable files:
 4. **Timeout errors**
    - Use `--no-refine` for faster processing
    - Check internet connection for API calls
+
+5. **Python architecture issues (Apple Silicon)**
+   - Ensure you're using native arm64 Python and terminal
+   - Check terminal architecture: `uname -m` should show `arm64`
+   - Reinstall iTerm2/Terminal if needed for arm64 support
 
 ### 📋 Log Files
 - Batch processing creates `batch_transcribe.log` in current directory
