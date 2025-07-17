@@ -303,7 +303,7 @@ def generate_summary(good_transcript, summary_path):
     response_long_summary = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "你是一位會議談話內容摘要助手。" if language.startswith('zh') else "You are a meeting transcript summarization assistant."},
+            {"role": "system", "content": "You are a meeting transcript summarization assistant."},
             {"role": "user", "content": long_summary_prompt},
         ],
         temperature=0.2,
@@ -548,8 +548,8 @@ def main():
                 log(f"Target file {new_file_path} already exists. Skipping rename.")
             else:
                 os.rename(input_file, new_file_path)
-                log(f"原始檔案為: {input_file}")
-                log(f"已將原始檔案重新命名為: {new_file_path}")
+                log(f"Original file: {input_file}")
+                log(f"Renamed original file to: {new_file_path}")
 
         # --- Rename transcript and summary files ---
         new_raw_transcript_path = os.path.join(basepath, add_land_index(new_base + ".raw_transcript", language, ".txt"))
