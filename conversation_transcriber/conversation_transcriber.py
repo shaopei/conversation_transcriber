@@ -369,7 +369,7 @@ def write_srt(transcript_lines, srt_path):
     log(f"SRT subtitles saved to: {srt_path}")
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or '--help' in sys.argv or '-h' in sys.argv:
         print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename [PREFIX] --force --verbose --no-refine --summary --lang LANGUAGE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --summary: Generate conversation summary (slower but more complete)")
@@ -384,7 +384,7 @@ def main():
         print("    python script.py video.mp4 --lang en --summary --verbose")
         print("    python script.py video.mp4 --rename  # Auto-rename with summary")
         print("    python script.py video.mp4 --rename Interview_Vertex  # With custom prefix")
-        sys.exit(1)
+        sys.exit(0)
 
     input_file = sys.argv[1]
     rename_file = '--rename' in sys.argv
