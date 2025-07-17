@@ -450,9 +450,11 @@ def main():
     basepath = os.path.dirname(input_file)
     output_prefix = base
 
-    raw_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.raw_transcript.txt")
-    good_transcript_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.refined_transcript.txt")
-    summary_path = os.path.join(basepath, f"{output_prefix}.gpu.speakers.summary.txt")
+    # Add language code to output file names, without 'gpu.speakers'
+    lang_code = language if language else 'en'
+    raw_transcript_path = os.path.join(basepath, f"{output_prefix}.raw_transcript_{lang_code}.txt")
+    good_transcript_path = os.path.join(basepath, f"{output_prefix}.refined_transcript_{lang_code}.txt")
+    summary_path = os.path.join(basepath, f"{output_prefix}.summary_{lang_code}.txt")
 
     # Only exit early if we're not doing rename and files exist
     if os.path.exists(good_transcript_path) and not force and not rename_file:
@@ -493,19 +495,16 @@ def main():
         long_summary = "No summary generated. Use --summary or --rename flag to generate conversation summary."
 
     # Save .srt subtitles
+    srt_path = os.path.join(basepath, f"{output_prefix}_{lang_code}.srt")
     if skip_refinement:
-        # Use raw transcript for SRT
         if os.path.exists(raw_transcript_path):
             with open(raw_transcript_path, "r", encoding="utf-8") as f:
                 transcript_lines = f.read().strip().splitlines()
-            srt_path = os.path.join(basepath, f"{output_prefix}.srt")
             write_srt(transcript_lines, srt_path)
     else:
-        # Use refined transcript for SRT
         if os.path.exists(good_transcript_path):
             with open(good_transcript_path, "r", encoding="utf-8") as f:
                 transcript_lines = f.read().strip().splitlines()
-            srt_path = os.path.join(basepath, f"{output_prefix}.srt")
             write_srt(transcript_lines, srt_path)
 
     # --- Summary-based renaming ---
@@ -536,7 +535,8 @@ def main():
         new_base = new_base.replace(' ', '_')
 
         # --- Rename main media file ---
-        new_file_path = os.path.join(basepath, f"{new_base}{ext}")
+        # Insert lang_code before the extension
+        new_file_path = os.path.join(basepath, f"{new_base}_{lang_code}{ext}")
         if os.path.abspath(new_file_path) != os.path.abspath(input_file):
             if os.path.exists(new_file_path):
                 log(f"Target file {new_file_path} already exists. Skipping rename.")
@@ -546,10 +546,10 @@ def main():
                 log(f"已將原始檔案重新命名為: {new_file_path}")
 
         # --- Rename transcript and summary files ---
-        new_raw_transcript_path = os.path.join(basepath, f"{new_base}.gpu.speakers.raw_transcript.txt")
-        new_good_transcript_path = os.path.join(basepath, f"{new_base}.gpu.speakers.refined_transcript.txt")
-        new_summary_path = os.path.join(basepath, f"{new_base}.gpu.speakers.summary.txt")
-        new_srt_path = os.path.join(basepath, f"{new_base}.srt")
+        new_raw_transcript_path = os.path.join(basepath, f"{new_base}.raw_transcript_{lang_code}.txt")
+        new_good_transcript_path = os.path.join(basepath, f"{new_base}.refined_transcript_{lang_code}.txt")
+        new_summary_path = os.path.join(basepath, f"{new_base}.summary_{lang_code}.txt")
+        new_srt_path = os.path.join(basepath, f"{new_base}_{lang_code}.srt")
         def safe_rename(src, dst):
             if os.path.exists(src):
                 if os.path.exists(dst):
