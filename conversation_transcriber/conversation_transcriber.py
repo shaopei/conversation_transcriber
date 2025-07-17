@@ -369,6 +369,23 @@ def write_srt(transcript_lines, srt_path):
     log(f"SRT subtitles saved to: {srt_path}")
 
 def main():
+    valid_options = {
+        '--rename', '--force', '--verbose', '--no-refine', '--summary', '--lang', '--help', '-h'
+    }
+    # Check for unknown options
+    unknown_options = [arg for arg in sys.argv[1:] if arg.startswith('--') and not any(arg.startswith(opt) for opt in valid_options)]
+    if unknown_options:
+        print(f"Error: Unknown option(s): {' '.join(unknown_options)}\n")
+        print("Valid options are:")
+        print("  --rename [PREFIX]: Auto-rename files and generate summary for filename")
+        print("  --force: Overwrite existing output files")
+        print("  --verbose: Show detailed progress and real-time output")
+        print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
+        print("  --summary: Generate conversation summary (slower but more complete)")
+        print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
+        print("  --help, -h: Show this help message")
+        sys.exit(1)
+
     if len(sys.argv) < 2 or '--help' in sys.argv or '-h' in sys.argv:
         print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename [PREFIX] --force --verbose --no-refine --summary --lang LANGUAGE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
