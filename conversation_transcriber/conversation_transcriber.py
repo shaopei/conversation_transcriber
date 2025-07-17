@@ -532,6 +532,9 @@ def main():
         else:
             new_base = f"{date_str}_{summary_for_name}"
 
+        # Replace spaces with underscores in the new base name
+        new_base = new_base.replace(' ', '_')
+
         # --- Rename main media file ---
         new_file_path = os.path.join(basepath, f"{new_base}{ext}")
         if os.path.abspath(new_file_path) != os.path.abspath(input_file):
