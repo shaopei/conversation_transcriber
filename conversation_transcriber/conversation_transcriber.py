@@ -180,7 +180,7 @@ def clean_transcript(transcript, good_transcript_path):
     
     with open(good_transcript_path, 'w', encoding='utf-8') as f:
         f.write(good_transcript)
-    log(f"修飾逐字稿: {good_transcript_path}")
+    log(f"Refined transcript: {good_transcript_path}")
     return good_transcript
 
 def detect_language(text):
@@ -349,7 +349,7 @@ def generate_filename_summary(long_summary):
         log("Warning: API returned None for filename summary, using fallback")
         return "談話記錄" if language.startswith('zh') else "conversation"
     summary = summary.strip()
-    summary = re.sub(r'[\\/*?:"<>|\n\r]', '', summary)
+    summary = re.sub(r'[\\/*?:"<>|\n\r,]', '', summary)
     return summary
 
 def write_srt(transcript_lines, srt_path):
