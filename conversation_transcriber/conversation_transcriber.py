@@ -139,8 +139,8 @@ def run_diarization_and_transcription(audio_file, pipeline, whisper_model_path="
     log("Whisper model transcribe done")
     return "\n".join(transcript_lines)
 
-def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose=False, language=None):
-    if os.path.exists(raw_transcript_path):
+def load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose=False, language=None, force=False):
+    if os.path.exists(raw_transcript_path) and not force:
         log(f"Found existing raw transcript at {raw_transcript_path}, skipping audio conversion, diarization, and transcription.")
         with open(raw_transcript_path, "r", encoding="utf-8") as f:
             return f.read()
@@ -470,7 +470,7 @@ def main():
         log(f"Found existing refined transcript at {good_transcript_path}")
     else:
         pipeline = load_diarization_pipeline(HF_TOKEN)
-        transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose, language)
+        transcript = load_or_generate_transcript(input_file, raw_transcript_path, pipeline, verbose, language, force=force)
         
         if skip_refinement:
             log("Skipping transcript refinement (--no-refine flag used)")
@@ -492,12 +492,21 @@ def main():
         log("Skipping summary generation (use --summary or --rename flag to enable)")
         long_summary = "No summary generated. Use --summary or --rename flag to generate conversation summary."
 
-    # Save .srt subtitles (from original transcript, not cleaned)
-    if os.path.exists(raw_transcript_path):
-        with open(raw_transcript_path, "r", encoding="utf-8") as f:
-            transcript_lines = f.read().strip().splitlines()
-        srt_path = os.path.join(basepath, f"{output_prefix}.srt")
-        write_srt(transcript_lines, srt_path)
+    # Save .srt subtitles
+    if skip_refinement:
+        # Use raw transcript for SRT
+        if os.path.exists(raw_transcript_path):
+            with open(raw_transcript_path, "r", encoding="utf-8") as f:
+                transcript_lines = f.read().strip().splitlines()
+            srt_path = os.path.join(basepath, f"{output_prefix}.srt")
+            write_srt(transcript_lines, srt_path)
+    else:
+        # Use refined transcript for SRT
+        if os.path.exists(good_transcript_path):
+            with open(good_transcript_path, "r", encoding="utf-8") as f:
+                transcript_lines = f.read().strip().splitlines()
+            srt_path = os.path.join(basepath, f"{output_prefix}.srt")
+            write_srt(transcript_lines, srt_path)
 
     # --- Summary-based renaming ---
     if rename_file:
