@@ -268,12 +268,20 @@ def clean_transcript_chunk(transcript_chunk):
     log("All attempts with gpt-4.1-mini failed for transcript cleaning, using original")
     return transcript_chunk
 
-def generate_summary(good_transcript, summary_path):
+def generate_summary(good_transcript, summary_path, long_summary_prompt_file=None):
     # Detect language and create appropriate prompt
     language = detect_language(good_transcript)
-    
-    if language.startswith('zh'):
-        long_summary_prompt = f"""請根據下面的逐字稿，寫一段1000字以內的摘要，涵蓋所有主要speaker的內容和觀點。請：
+    long_summary_prompt = None
+    if long_summary_prompt_file:
+        with open(long_summary_prompt_file, 'r', encoding='utf-8') as f:
+            custom_prompt = f.read()
+        if '{good_transcript}' in custom_prompt:
+            long_summary_prompt = custom_prompt.replace('{good_transcript}', good_transcript)
+        else:
+            long_summary_prompt = custom_prompt.rstrip() + f"\n\nTranscript:\n{good_transcript}"
+    else:
+        if language.startswith('zh'):
+            long_summary_prompt = f"""請根據下面的逐字稿，寫一段1000字以內的摘要，涵蓋所有主要speaker的內容和觀點。請：
 
 1. 識別並總結每個主要speaker的重要觀點和貢獻
 2. 描述他們討論的主題、問題或事件
@@ -286,9 +294,9 @@ def generate_summary(good_transcript, summary_path):
 ---
 {good_transcript}
 """
-    else:
-        # English and other languages
-        long_summary_prompt = f"""Based on the following transcript, write a summary of up to 1000 words covering all main speakers' content and perspectives. Please:
+        else:
+            # English and other languages
+            long_summary_prompt = f"""Based on the following transcript, write a summary of up to 1000 words covering all main speakers' content and perspectives. Please:
 
 1. Identify and summarize each main speaker's key points and contributions
 2. Describe the topics, issues, or events they discussed
@@ -370,7 +378,7 @@ def write_srt(transcript_lines, srt_path):
 
 def main():
     valid_options = {
-        '--rename', '--force', '--verbose', '--no-refine', '--summary', '--lang', '--help', '-h'
+        '--rename', '--force', '--verbose', '--no-refine', '--summary', '--lang', '--help', '-h', '--long_summary_prompt'
     }
     # Check for unknown options
     unknown_options = [arg for arg in sys.argv[1:] if arg.startswith('--') and not any(arg.startswith(opt) for opt in valid_options)]
@@ -383,16 +391,18 @@ def main():
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --summary: Generate conversation summary (slower but more complete)")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
+        print("  --long_summary_prompt FILE: Use a custom prompt file for long summary generation (transcript will be included automatically)")
         print("  --help, -h: Show this help message")
         sys.exit(1)
 
     if len(sys.argv) < 2 or '--help' in sys.argv or '-h' in sys.argv:
-        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename [PREFIX] --force --verbose --no-refine --summary --lang LANGUAGE]")
+        print("Usage: python this_script.py input_file.mov|mp4|mp3|wav [--rename [PREFIX] --force --verbose --no-refine --summary --lang LANGUAGE --long_summary_prompt FILE]")
         print("  --no-refine: Skip transcript refinement (much faster, avoids timeout issues)")
         print("  --summary: Generate conversation summary (slower but more complete)")
         print("  --rename [PREFIX]: Auto-rename files and generate summary for filename")
         print("                    PREFIX is optional (e.g., --rename AI_Panel_Discussion)")
         print("  --lang LANGUAGE: Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
+        print("  --long_summary_prompt FILE: Use a custom prompt file for long summary generation (transcript will be included automatically)")
         print("  Note: English is used by default. Use --lang to specify other languages.")
         print("  Examples:")
         print("    python script.py video.mp4  # Uses English (default)")
@@ -401,6 +411,7 @@ def main():
         print("    python script.py video.mp4 --lang en --summary --verbose")
         print("    python script.py video.mp4 --rename  # Auto-rename with summary")
         print("    python script.py video.mp4 --rename Interview_Vertex  # With custom prefix")
+        print("    python script.py video.mp4 --long_summary_prompt custom_prompt.txt")
         sys.exit(0)
 
     input_file = sys.argv[1]
@@ -439,6 +450,32 @@ def main():
         print("  --lang it (Italian)  --lang pt (Portuguese) --lang ru (Russian)")
         print("="*60)
         log("Using English as default language. Use --lang to specify other languages (zh, ja, ko, fr, de, es, it, pt, ru)")
+
+    # Parse long_summary_prompt file if provided
+    long_summary_prompt_file = None
+    custom_prompt_preview = None
+    if '--long_summary_prompt' in sys.argv:
+        lsp_index = sys.argv.index('--long_summary_prompt')
+        if lsp_index + 1 < len(sys.argv) and not sys.argv[lsp_index + 1].startswith('--'):
+            long_summary_prompt_file = sys.argv[lsp_index + 1]
+            if not os.path.exists(long_summary_prompt_file):
+                print(f"Error: Custom long summary prompt file '{long_summary_prompt_file}' not found.")
+                sys.exit(1)
+            # Print the file name and prompt preview at the beginning
+            with open(long_summary_prompt_file, 'r', encoding='utf-8') as f:
+                custom_prompt = f.read()
+            print("\n==============================")
+            print(f"Using custom long summary prompt file: {long_summary_prompt_file}")
+            print("------------------------------")
+            if '{good_transcript}' in custom_prompt:
+                preview = custom_prompt.replace('{good_transcript}', '[TRANSCRIPT HERE]')
+            else:
+                preview = custom_prompt.rstrip() + '\n\nTranscript:\n[TRANSCRIPT HERE]'
+            print(preview)
+            print("==============================\n")
+        else:
+            print("Error: --long_summary_prompt specified but no file given.")
+            sys.exit(1)
 
     if not os.path.exists(input_file):
         print(f"File not found: {input_file}")
@@ -496,7 +533,7 @@ def main():
             with open(summary_path, "r", encoding="utf-8") as f:
                 long_summary = f.read()
         else:
-            long_summary = generate_summary(good_transcript, summary_path)
+            long_summary = generate_summary(good_transcript, summary_path, long_summary_prompt_file)
     else:
         log("Skipping summary generation (use --summary or --rename flag to enable)")
         long_summary = "No summary generated. Use --summary or --rename flag to generate conversation summary."
