@@ -38,6 +38,8 @@ def main():
         print("  --verbose      Show detailed progress")
         print("  --force        Overwrite existing output files")
         print("  --lang LANG    Specify language (default: en, options: zh, ja, ko, fr, de, es, it, pt, ru)")
+        print("  --long_summary_prompt FILE  Use custom prompt file for summary generation")
+        print("  --rename [PREFIX]  Auto-rename files based on content summary (includes summary generation)")
         print("  --help, -h     Show this help message")
         print("")
         print("EXAMPLES:")
@@ -45,6 +47,9 @@ def main():
         print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py . --verbose")
         print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --lang zh --no-refine")
         print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --summary  # With summaries")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --long_summary_prompt custom_prompt.txt")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --rename  # Auto-rename all files")
+        print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos --rename Interview_Series  # With prefix")
         print("  python3 ~/projects/conversation_transcriber/batch_transcribe.py ~/Videos  # Uses English (default)")
         return
     
@@ -54,12 +59,18 @@ def main():
     # Get target directory from command line or use current directory
     target_dir = os.getcwd()  # Default to current directory
     
-    # Parse arguments to find target directory (first non-flag argument that's not a language value)
+    # Parse arguments to find target directory (first non-flag argument that's not a language value, prompt file, or rename prefix)
     for i, arg in enumerate(sys.argv[1:], 1):
         if not arg.startswith('--'):
             # Check if this is a language value (following --lang)
             if i > 1 and sys.argv[i-1] == '--lang':
                 continue  # Skip language values
+            # Check if this is a prompt file (following --long_summary_prompt)
+            if i > 1 and sys.argv[i-1] == '--long_summary_prompt':
+                continue  # Skip prompt file values
+            # Check if this is a rename prefix (following --rename)
+            if i > 1 and sys.argv[i-1] == '--rename':
+                continue  # Skip rename prefix values
             # This is the target directory
             target_dir = arg
             if not os.path.exists(target_dir):
@@ -129,6 +140,26 @@ def main():
                         print("Invalid choice. Please enter 1, 2, or 3.")
         else:
             log("WARNING: --lang specified but no language given. Using English as default.")
+    if "--long_summary_prompt" in sys.argv:
+        lsp_index = sys.argv.index("--long_summary_prompt")
+        if lsp_index + 1 < len(sys.argv) and not sys.argv[lsp_index + 1].startswith("--"):
+            prompt_file = sys.argv[lsp_index + 1]
+            if not os.path.exists(prompt_file):
+                log(f"ERROR: Custom long summary prompt file '{prompt_file}' not found!")
+                return
+            args.extend(["--long_summary_prompt", prompt_file])
+            log(f"Using custom long summary prompt file: {prompt_file}")
+        else:
+            log("WARNING: --long_summary_prompt specified but no file given. Skipping custom prompt.")
+    if "--rename" in sys.argv:
+        args.append("--rename")
+        log("Using --rename mode (auto-rename files based on content)")
+        # Parse rename prefix if provided
+        rename_index = sys.argv.index("--rename")
+        if rename_index + 1 < len(sys.argv) and not sys.argv[rename_index + 1].startswith("--"):
+            rename_prefix = sys.argv[rename_index + 1]
+            args.append(rename_prefix)
+            log(f"Using rename prefix: {rename_prefix}")
 
     successful = 0
     failed = 0
